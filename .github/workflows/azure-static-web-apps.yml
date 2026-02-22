@@ -82,4 +82,4 @@ jobs:
           skip_app_build: true
           app_location: "src/frontend"
           api_location: ""
-          output_location: "src/frontend/.next"
+          output_location: ".next"
