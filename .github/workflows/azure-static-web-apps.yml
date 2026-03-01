@@ -9,6 +9,12 @@ on:
     branches:
       - main
 
+# when the backend app service name changes you can override by
+# setting AZURE_BACKEND_APP_NAME in the repo or workflow environment.
+# authenticate using a service principal with secrets:
+# - AZURE_CREDENTIALS (JSON with clientId, clientSecret, subscriptionId, tenantId)
+# - AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID
+
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -37,8 +43,38 @@ jobs:
         working-directory: src/frontend
         run: npm run lint
 
-  build_and_deploy_job:
+  deploy_backend:
     needs: lint
+    runs-on: ubuntu-latest
+    name: Publish & deploy backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Publish backend project
+        working-directory: src/backend
+        run: dotnet publish -c Release -o publish
+
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: ${{ secrets.AZURE_BACKEND_APP_NAME || 'show-db-import-d4gjfzaqcqb6b4gu.eastus2-01' }}
+          package: src/backend/publish
+
+      - name: Azure logout
+        run: az logout
+
+  build_and_deploy_job:
+    needs: [lint, deploy_backend]
     runs-on: ubuntu-latest
     name: Build and Deploy to production
     environment:
@@ -67,6 +103,11 @@ jobs:
       - name: Install dependencies
         working-directory: src/frontend
         run: npm ci
+
+      - name: Configure frontend API URL
+        run: |
+          # backend URL is derived from app name or publish profile
+          echo "NEXT_PUBLIC_API_URL=https://${{ secrets.AZURE_BACKEND_APP_NAME || 'show-db-import-d4gjfzaqcqb6b4gu.eastus2-01' }}.azurewebsites.net" >> $GITHUB_ENV
 
       - name: Build frontend
         working-directory: src/frontend
