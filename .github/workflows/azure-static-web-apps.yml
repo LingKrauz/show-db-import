@@ -76,7 +76,13 @@ jobs:
         id: get-backend-hostname
         run: |
           appName="${{ secrets.AZURE_BACKEND_APP_NAME || 'show-db-import-d4gjfzaqcqb6b4gu.eastus2-01' }}"
-          hostname=$(az webapp show --name "$appName" --query defaultHostName -o tsv)
+          # Use `az webapp list` and filter by name to avoid requiring a resource group
+          hostname=$(az webapp list --query "[?name=='$appName'] | [0].defaultHostName" -o tsv)
+          if [ -z "$hostname" ]; then
+            echo "No hostname found for $appName" >&2
+            az webapp list --query "[?contains(name, '$appName')].{name:name,resourceGroup:resourceGroup,defaultHostName:defaultHostName}" -o table || true
+            exit 1
+          fi
           echo "backend_host=$hostname" >> $GITHUB_OUTPUT
 
       - name: Azure logout
