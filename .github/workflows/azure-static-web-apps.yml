@@ -47,6 +47,8 @@ jobs:
     needs: lint
     runs-on: ubuntu-latest
     name: Publish & deploy backend
+    outputs:
+      backend_host: ${{ steps.get-backend-hostname.outputs.backend_host }}
     steps:
       - uses: actions/checkout@v4
 
@@ -69,6 +71,13 @@ jobs:
         with:
           app-name: ${{ secrets.AZURE_BACKEND_APP_NAME || 'show-db-import-d4gjfzaqcqb6b4gu.eastus2-01' }}
           package: src/backend/publish
+
+      - name: Get backend hostname
+        id: get-backend-hostname
+        run: |
+          appName="${{ secrets.AZURE_BACKEND_APP_NAME || 'show-db-import-d4gjfzaqcqb6b4gu.eastus2-01' }}"
+          hostname=$(az webapp show --name "$appName" --query defaultHostName -o tsv)
+          echo "backend_host=$hostname" >> $GITHUB_OUTPUT
 
       - name: Azure logout
         run: az logout
@@ -106,8 +115,8 @@ jobs:
 
       - name: Configure frontend API URL
         run: |
-          # backend URL is derived from app name or publish profile
-          echo "NEXT_PUBLIC_API_URL=https://${{ secrets.AZURE_BACKEND_APP_NAME || 'show-db-import-d4gjfzaqcqb6b4gu.eastus2-01' }}.azurewebsites.net" >> $GITHUB_ENV
+          # Use hostname discovered from the backend deployment
+          echo "NEXT_PUBLIC_API_URL=https://${{ needs.deploy_backend.outputs.backend_host }}" >> $GITHUB_ENV
 
       - name: Build frontend
         working-directory: src/frontend
