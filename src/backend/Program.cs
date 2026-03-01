@@ -24,7 +24,10 @@ app.UseCors();
 
 app.UseHttpLogging();
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseAuthorization();
 
