@@ -24,3 +24,43 @@ This repository is set up to deploy the frontend to **Azure Static Web Apps** us
 
 Once the action completes successfully, your site will be accessible at the generated Azure static web address.
 
+## Backend deployment
+
+The repository now includes an ASP.NET Core backend that is deployed to an existing Azure App Service.
+
+1. **Create or identify an App Service** for the backend. Note the name (for example
+   `show-db-import-d4gjfzaqcqb6b4gu.eastus2-01`) and its URL
+   (`https://<app‑name>.azurewebsites.net`).
+2. **Set up service principal authentication** by adding these secrets to the repository:
+   - `AZURE_CLIENT_ID` – from the service principal registration
+   - `AZURE_CREDENTIALS` – JSON string containing `clientId`, `clientSecret`,
+     `subscriptionId`, and `tenantId` for the service principal
+   - `AZURE_SUBSCRIPTION_ID` – subscription ID where the App Service is deployed
+   - `AZURE_TENANT_ID` – Azure tenant ID
+   - `AZURE_BACKEND_APP_NAME` (optional) – the App Service name; if not set, defaults to
+     `show-db-import-d4gjfzaqcqb6b4gu.eastus2-01`.
+   
+   For help configuring a service principal, see [Microsoft's documentation](https://docs.microsoft.com/en-us/azure/developer/github/connect-from-azure).
+3. **Configure CORS** on the backend by setting an application setting
+   `FrontendUrl` to the production frontend's URL, e.g.
+   `https://thankful-plant-0f346d30f.2.azurestaticapps.net/`. The backend also
+   permits `http://localhost:3000` automatically for development.
+4. **API URL for frontend**: during the GitHub Actions build the workflow will
+   insert `NEXT_PUBLIC_API_URL` pointing at the backend App Service URL. The
+   frontend code reads this variable at runtime (see `src/frontend/app/page.tsx`).
+
+### Local development
+
+Run the frontend and backend separately; both allow `localhost` origins:
+
+```bash
+# backend (runs on default 5132)
+dotnet run --project src/backend
+# frontend
+cd src/frontend && npm run dev
+```
+
+By default the UI will call `http://localhost:5132/api/timer`.
+
+---
+
