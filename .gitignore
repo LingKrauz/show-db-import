@@ -60,3 +60,12 @@ src/frontend/.postcssrc.js
 
 # Ignore GitHub workflows cache
 .github/workflows/*.cache
+
+# .NET
+bin/
+obj/
+*.user
+*.suo
+*.vs/
+*.DotSettings.user
+src/backend/Properties/launchSettings.json
