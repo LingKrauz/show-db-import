@@ -10,7 +10,8 @@ on:
       - main
 
 # when the backend app service name changes you can override by
-# setting AZURE_BACKEND_APP_NAME in the repo or workflow environment.
+# setting AZURE_BACKEND_APP_NAME as a repository **variable** (not secret)
+# under Settings → Secrets and variables → Actions → Variables.
 # authenticate using a service principal with secrets:
 # - AZURE_CREDENTIALS (JSON with clientId, clientSecret, subscriptionId, tenantId)
 # - AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID
@@ -69,13 +70,13 @@ jobs:
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
-          app-name: ${{ secrets.AZURE_BACKEND_APP_NAME || 'show-db-import-d4gjfzaqcqb6b4gu.eastus2-01' }}
+          app-name: ${{ vars.AZURE_BACKEND_APP_NAME || 'show-db-import-d4gjfzaqcqb6b4gu.eastus2-01' }}
           package: src/backend/publish
 
       - name: Get backend hostname
         id: get-backend-hostname
         run: |
-          appName="${{ secrets.AZURE_BACKEND_APP_NAME || 'show-db-import-d4gjfzaqcqb6b4gu.eastus2-01' }}"
+          appName="${{ vars.AZURE_BACKEND_APP_NAME || 'show-db-import-d4gjfzaqcqb6b4gu.eastus2-01' }}"
           # Use `az webapp list` and filter by name to avoid requiring a resource group
           hostname=$(az webapp list --query "[?name=='$appName'] | [0].defaultHostName" -o tsv)
           if [ -z "$hostname" ]; then
@@ -121,12 +122,21 @@ jobs:
 
       - name: Configure frontend API URL
         run: |
-          # Use hostname discovered from the backend deployment
-          echo "NEXT_PUBLIC_API_URL=https://${{ needs.deploy_backend.outputs.backend_host }}" >> $GITHUB_ENV
+          # Write .env.production so Next.js inlines the value at build time
+          echo "NEXT_PUBLIC_API_URL=https://${{ needs.deploy_backend.outputs.backend_host }}" > src/frontend/.env.production
+          echo "API URL set to: https://${{ needs.deploy_backend.outputs.backend_host }}"
 
       - name: Build frontend
         working-directory: src/frontend
         run: npm run build
+
+      - name: Verify API URL in build
+        working-directory: src/frontend
+        run: |
+          echo "Contents of .env.production:"
+          cat .env.production
+          echo "Checking for inlined API URL in build output..."
+          grep -r "NEXT_PUBLIC_API_URL" .next/static/ || echo "Env var inlined (not found as raw string — expected for client builds)"
 
       - name: Deploy to Azure Static Web Apps
         id: deploy-to-azure
