@@ -7,6 +7,7 @@ on:
 
 env:
   BACKEND_APP_NAME: ${{ vars.AZURE_BACKEND_APP_NAME }}
+  RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
 
 jobs:
   lint:
@@ -44,10 +45,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Validate backend app name
+      - name: Validate required variables
         run: |
-          if [ -z "$BACKEND_APP_NAME" ]; then
-            echo "::error::AZURE_BACKEND_APP_NAME repository variable is not set. Go to Settings > Variables > Actions to configure it."
+          missing=()
+          [ -z "$BACKEND_APP_NAME" ] && missing+=("AZURE_BACKEND_APP_NAME")
+          [ -z "$RESOURCE_GROUP" ] && missing+=("AZURE_RESOURCE_GROUP")
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Missing repository variables: ${missing[*]}. Go to Settings > Variables > Actions to configure them."
             exit 1
           fi
 
@@ -74,10 +78,9 @@ jobs:
       - name: Get backend hostname
         id: get-backend-hostname
         run: |
-          hostname=$(az webapp list --query "[?name=='$BACKEND_APP_NAME'] | [0].defaultHostName" -o tsv)
+          hostname=$(az webapp show --name "$BACKEND_APP_NAME" --resource-group "$RESOURCE_GROUP" --query defaultHostName -o tsv)
           if [ -z "$hostname" ]; then
-            echo "::error::No hostname found for app '$BACKEND_APP_NAME'"
-            az webapp list --query "[?contains(name, '$BACKEND_APP_NAME')].{name:name,resourceGroup:resourceGroup,defaultHostName:defaultHostName}" -o table || true
+            echo "::error::No hostname found for app '$BACKEND_APP_NAME' in resource group '$RESOURCE_GROUP'"
             exit 1
           fi
           echo "backend_host=$hostname" >> "$GITHUB_OUTPUT"
@@ -133,3 +136,18 @@ jobs:
           app_location: "src/frontend"
           api_location: ""
           output_location: ".next"
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set backend CORS origin
+        run: |
+          az webapp config appsettings set \
+            --name "$BACKEND_APP_NAME" \
+            --resource-group "$RESOURCE_GROUP" \
+            --settings "FrontendUrl=${{ steps.deploy-to-azure.outputs.static_web_app_url }}"
+
+      - name: Azure logout
+        run: az logout
