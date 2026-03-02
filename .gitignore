@@ -32,6 +32,7 @@ build/
 
 # Claude Code
 .claude/
+CLAUDE.md
 
 # Dependency directories
 src/frontend/node_modules/
