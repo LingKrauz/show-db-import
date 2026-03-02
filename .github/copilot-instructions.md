@@ -19,7 +19,7 @@ Use these agents for domain-specific work — they own all technical details for
 |---|---|---|
 | `frontend` | `.github/agents/frontend.md` | Any work in `src/frontend/` — pages, components, styling, TypeScript, ESLint |
 | `backend` | `.github/agents/backend.md` | Any work in `src/backend/` — controllers, middleware, configuration |
-| `devops` | `.github/agents/devops.md` | CI/CD pipeline, Azure deployment, GitHub Actions, secrets management |
+| `devops` | `.github/agents/devops.md` | CI/CD pipeline, Azure deployment, GitHub Actions, secrets & variables |
 | `api-contract` | `.github/agents/api-contract.md` | API design, endpoint contracts, AniList/MAL integration planning |
 | `docs-sync` | `.github/agents/docs-sync.md` | After any change to architecture, dependencies, commands, or conventions |
 
