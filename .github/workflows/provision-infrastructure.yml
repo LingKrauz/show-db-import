@@ -79,6 +79,9 @@ jobs:
             --tags repository="${{ steps.naming.outputs.workload_name }}" environment="${{ steps.naming.outputs.environment_name }}" \
             --output none
 
+      - name: Install latest Bicep CLI
+        run: az bicep install
+
       - name: Provision infrastructure with Bicep
         id: provision
         run: |
