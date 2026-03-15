@@ -155,7 +155,7 @@ jobs:
             --name "${{ steps.naming.outputs.workload_name }}-infra-${{ github.run_id }}" \
             --resource-group "${{ steps.naming.outputs.resource_group_name }}" \
             --template-file infra/main.bicep \
-            --parameters @infra/main.bicepparam \
+            --parameters infra/main.bicepparam \
             --parameters \
               workloadName="${{ steps.naming.outputs.workload_name }}" \
               environmentName="${{ steps.naming.outputs.environment_name }}" \
