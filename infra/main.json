@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.41.2.15936",
-      "templateHash": "7137796642141850019"
+      "templateHash": "4554461157194061746"
     }
   },
   "parameters": {
@@ -477,7 +477,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.41.2.15936",
-              "templateHash": "13973750830845443870"
+              "templateHash": "9998449347700844731"
             }
           },
           "parameters": {
@@ -508,7 +508,14 @@
             "environmentName": {
               "type": "string",
               "metadata": {
-                "description": "Deployment environment name."
+                "description": "Deployment environment name (e.g. dev, test, prod)."
+              }
+            },
+            "aspNetCoreEnvironment": {
+              "type": "string",
+              "defaultValue": "[if(equals(parameters('environmentName'), 'dev'), 'Development', if(equals(parameters('environmentName'), 'prod'), 'Production', parameters('environmentName')))]",
+              "metadata": {
+                "description": "ASP.NET Core environment name passed via ASPNETCORE_ENVIRONMENT."
               }
             },
             "runtimeStack": {
@@ -554,7 +561,7 @@
             "baseAppSettings": [
               {
                 "name": "ASPNETCORE_ENVIRONMENT",
-                "value": "[parameters('environmentName')]"
+                "value": "[parameters('aspNetCoreEnvironment')]"
               },
               {
                 "name": "FrontendUrl",
