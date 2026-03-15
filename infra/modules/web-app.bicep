@@ -10,8 +10,11 @@ param serverFarmId string
 @description('Frontend URL allowed by CORS.')
 param frontendUrl string
 
-@description('Deployment environment name.')
+@description('Deployment environment name (e.g. dev, test, prod).')
 param environmentName string
+
+@description('ASP.NET Core environment name passed via ASPNETCORE_ENVIRONMENT.')
+param aspNetCoreEnvironment string = environmentName == 'dev' ? 'Development' : environmentName == 'prod' ? 'Production' : environmentName
 
 @description('Runtime stack for the Web App.')
 param runtimeStack string = 'DOTNETCORE|10.0'
@@ -28,7 +31,7 @@ param tags object = {}
 var baseAppSettings = [
   {
     name: 'ASPNETCORE_ENVIRONMENT'
-    value: environmentName
+    value: aspNetCoreEnvironment
   }
   {
     name: 'FrontendUrl'
