@@ -1,6 +1,6 @@
 using './main.bicep'
 
-param workloadName = 'showdbimport'
+param workloadName = 'show-db-import'
 param environmentName = 'dev'
 param location = 'eastus2'
 param regionShort = 'eus2'
