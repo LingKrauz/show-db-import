@@ -3,46 +3,41 @@ Imports user data and shows from AniList/MAL
 
 ## Deployment
 
-This repository is set up to deploy the frontend to **Azure Static Web Apps** using GitHub Actions. The workflow file is located at `.github/workflows/azure-static-web-apps.yml`.
+This repository is set up to provision and deploy the application with GitHub Actions. The main workflow is `.github/workflows/azure-static-web-apps.yml`.
 
 ### Setup Steps
 
-1. **Create an Azure Static Web App** in the Azure portal. During creation select GitHub as the deployment source and point it to this repository.
-2. When Azure generates the deployment workflow, it will add a secret named `AZURE_STATIC_WEB_APPS_API_TOKEN` to the repository automatically. If you recreate the workflow manually, set that secret yourself under _Settings > Secrets and variables > Actions_.
-3. Ensure the workflow settings match the project:
-   - **App location**: `src/frontend`
-   - **Output location**: `src/frontend/.next`
-   - **API location**: (leave blank for now)
-
-4. **Pipeline improvements & best practices**
-   - A separate **lint/type‑check job** runs before the build; it prevents bad code from deploying.
-   - Node modules are cached to reduce build time between runs.
-   - The job uses a **concurrency group** (`static-web-apps-production`) so only one deployment executes at a time.
-   - A GitHub **Production environment** is declared; the deployment URL is attached as the output.
-
-5. Commit and push to the `main` branch. The GitHub Actions pipeline will install dependencies, build the front end and then upload the static assets to Azure.
-
-Once the action completes successfully, your site will be accessible at the generated Azure static web address.
+1. **Set up service principal authentication** by adding these secrets to the repository:
+   - `AZURE_CLIENT_ID` – from the service principal registration
+   - `AZURE_CREDENTIALS` – JSON string containing `clientId`, `clientSecret`, `subscriptionId`, and `tenantId`
+   - `AZURE_SUBSCRIPTION_ID` – subscription ID where the deployment runs
+   - `AZURE_TENANT_ID` – Azure tenant ID
+2. Commit and push to the `main` branch or run the workflow manually.
+3. The workflow will:
+   - derive naming from the repository name
+   - create or reuse the Azure resource group
+   - provision or converge infrastructure with Bicep
+   - deploy the backend to Azure App Service
+   - build and deploy the frontend to Azure Static Web Apps
+   - update backend CORS settings
+4. The workflow summary includes:
+   - live frontend and backend URLs
+   - Azure Portal links for the resource group and deployed resources
+   - resource IDs for the provisioned environment
 
 ## Backend deployment
 
 The repository now includes an ASP.NET Core backend that is deployed to Azure App Service.
 
-1. **Set up service principal authentication** by adding these secrets to the repository:
-   - `AZURE_CLIENT_ID` – from the service principal registration
-   - `AZURE_CREDENTIALS` – JSON string containing `clientId`, `clientSecret`,
-     `subscriptionId`, and `tenantId` for the service principal
-   - `AZURE_SUBSCRIPTION_ID` – subscription ID where the App Service is deployed
-   - `AZURE_TENANT_ID` – Azure tenant ID
-
-   For help configuring a service principal, see [Microsoft's documentation](https://docs.microsoft.com/en-us/azure/developer/github/connect-from-azure).
-2. **Provision infrastructure with Bicep** using `infra/main.bicep` or the manual workflow
-   `.github/workflows/provision-infrastructure.yml`. The Bicep template applies tags to the
-   backend App Service, and the deployment workflow now discovers the target app from Azure by
-   querying those tags instead of relying on a GitHub repository variable for the app name.
-3. **Configure repository variables**:
-   - `AZURE_RESOURCE_GROUP` – the resource group where the Bicep deployment provisions the app
-     resources
+1. **Set up service principal authentication** as described above.
+2. **Push-driven deployments now provision first**. The main workflow provisions or reuses the
+   Azure environment before deploying application code, so infrastructure is no longer a separate
+   prerequisite.
+3. **Repository-driven naming** is used for the resource group and workload naming inputs. The
+   workflow derives names from the repository at runtime, for example:
+   - Resource group: `rg-<repository-name>-<environment>`
+   - Static Web App: `swa-<normalized-repository-name>-<environment>-<instance>-<suffix>`
+   - Backend Web App: `app-<normalized-repository-name>-api-<environment>-<instance>-<suffix>`
 4. **Configure CORS** on the backend by setting an application setting
    `FrontendUrl` to the production frontend's URL, e.g.
    `https://thankful-plant-0f346d30f.2.azurestaticapps.net/`. The backend also
@@ -63,13 +58,13 @@ The repository now includes Bicep infrastructure in `infra/` for the current pro
 
 ### Naming approach
 
-The Bicep template uses a simple CAF-inspired naming pattern:
+The Bicep template uses a simple CAF-inspired naming pattern, with the repository name used as the workload core:
 
 `<prefix>-<workload>-<component?>-<environment>-<region?>-<instance?>`
 
 Examples:
 
-- `rg-showdbimport-prod`
+- `rg-show-db-import-prod`
 - `swa-showdbimport-prod-001-<suffix>`
 - `plan-showdbimport-prod-eus2-001`
 - `app-showdbimport-api-prod-001-<suffix>`
@@ -83,13 +78,15 @@ az deployment group create --resource-group <resource-group> --template-file inf
 
 ### Provision from GitHub Actions
 
-Run the `Provision Azure infrastructure` workflow manually. It creates the resource group if
-needed, deploys `infra/main.bicep`, and writes a summary that includes:
+Run the `Provision Azure infrastructure` workflow manually if you want to provision without a full
+application deployment. It derives the resource group from the repository name, creates the
+resource group if needed, deploys `infra/main.bicep`, and writes a summary that includes:
 
 - resource names
 - resource IDs
 - the backend API base URL
 - the Static Web App URL
+- Azure Portal links for the deployed environment
 
 ### Important outputs
 
@@ -101,6 +98,11 @@ The top-level Bicep template returns operator-friendly outputs:
 - `backendAppServicePlanName`
 - `backendWebAppName`
 - `backendApiBaseUrl`
+- `resourceGroupPortalUrl`
+- `appServicePlanPortalUrl`
+- `backendWebAppPortalUrl`
+- `staticWebAppPortalUrl`
+- `deploymentPortalUrl`
 - `resourceIds`
 - `deploymentSummary`
 

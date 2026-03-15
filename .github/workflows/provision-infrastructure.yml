@@ -42,9 +42,6 @@ on:
         default: true
         type: boolean
 
-env:
-  RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
-
 jobs:
   provision:
     runs-on: ubuntu-latest
@@ -54,12 +51,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Validate required variables
+      - name: Derive naming inputs from repository
+        id: naming
         run: |
-          if [ -z "$RESOURCE_GROUP" ]; then
-            echo "::error::Missing repository variable AZURE_RESOURCE_GROUP. Set it in Settings > Variables > Actions."
-            exit 1
-          fi
+          repo_name="${{ github.event.repository.name }}"
+          repo_name_lower=$(echo "$repo_name" | tr '[:upper:]' '[:lower:]')
+          workload_name=$(echo "$repo_name_lower" | tr -cs 'a-z0-9-' '-' | sed 's/^-//; s/-$//')
+          environment_name=$(echo "${{ inputs.environment_name }}" | tr '[:upper:]' '[:lower:]')
+          resource_group_name="rg-${workload_name}-${environment_name}"
+
+          {
+            echo "workload_name=$workload_name"
+            echo "environment_name=$environment_name"
+            echo "resource_group_name=$resource_group_name"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Azure login
         uses: azure/login@v2
@@ -69,21 +74,22 @@ jobs:
       - name: Ensure resource group exists
         run: |
           az group create \
-            --name "$RESOURCE_GROUP" \
+            --name "${{ steps.naming.outputs.resource_group_name }}" \
             --location "${{ inputs.location }}" \
-            --tags workload=show-db-import environment="${{ inputs.environment_name }}" \
+            --tags repository="${{ steps.naming.outputs.workload_name }}" environment="${{ steps.naming.outputs.environment_name }}" \
             --output none
 
       - name: Provision infrastructure with Bicep
         id: provision
         run: |
           deployment=$(az deployment group create \
-            --name "show-db-import-infra-${{ github.run_id }}" \
-            --resource-group "$RESOURCE_GROUP" \
+            --name "${{ steps.naming.outputs.workload_name }}-infra-${{ github.run_id }}" \
+            --resource-group "${{ steps.naming.outputs.resource_group_name }}" \
             --template-file infra/main.bicep \
             --parameters @infra/main.bicepparam \
             --parameters \
-              environmentName="${{ inputs.environment_name }}" \
+              workloadName="${{ steps.naming.outputs.workload_name }}" \
+              environmentName="${{ steps.naming.outputs.environment_name }}" \
               location="${{ inputs.location }}" \
               regionShort="${{ inputs.region_short }}" \
               staticWebAppSku="${{ inputs.static_web_app_sku }}" \
@@ -101,8 +107,14 @@ jobs:
           static_web_app_name=$(jq -r '.staticWebAppName.value' outputs.json)
           static_web_app_url=$(jq -r '.staticWebAppUrl.value' outputs.json)
           resource_group_name=$(jq -r '.resourceGroupName.value' outputs.json)
+          resource_group_portal_url=$(jq -r '.resourceGroupPortalUrl.value' outputs.json)
           app_service_plan_name=$(jq -r '.backendAppServicePlanName.value' outputs.json)
+          app_service_plan_portal_url=$(jq -r '.appServicePlanPortalUrl.value' outputs.json)
           application_insights_name=$(jq -r '.applicationInsightsName.value' outputs.json)
+          backend_web_app_portal_url=$(jq -r '.backendWebAppPortalUrl.value' outputs.json)
+          static_web_app_portal_url=$(jq -r '.staticWebAppPortalUrl.value' outputs.json)
+          deployment_name=$(jq -r '.deploymentName.value' outputs.json)
+          deployment_portal_url=$(jq -r '.deploymentPortalUrl.value' outputs.json)
           resource_ids=$(jq -c '.resourceIds.value' outputs.json)
 
           {
@@ -112,8 +124,14 @@ jobs:
             echo "static_web_app_name=$static_web_app_name"
             echo "static_web_app_url=$static_web_app_url"
             echo "resource_group_name=$resource_group_name"
+            echo "resource_group_portal_url=$resource_group_portal_url"
             echo "app_service_plan_name=$app_service_plan_name"
+            echo "app_service_plan_portal_url=$app_service_plan_portal_url"
             echo "application_insights_name=$application_insights_name"
+            echo "backend_web_app_portal_url=$backend_web_app_portal_url"
+            echo "static_web_app_portal_url=$static_web_app_portal_url"
+            echo "deployment_name=$deployment_name"
+            echo "deployment_portal_url=$deployment_portal_url"
             echo "resource_ids=$resource_ids"
           } >> "$GITHUB_OUTPUT"
 
@@ -122,11 +140,12 @@ jobs:
           {
             echo "## Provisioned infrastructure"
             echo
-            echo "- Resource group: \`${{ steps.provision.outputs.resource_group_name }}\`"
-            echo "- Static Web App: \`${{ steps.provision.outputs.static_web_app_name }}\`"
+            echo "- Resource group: [${{ steps.provision.outputs.resource_group_name }}](${{ steps.provision.outputs.resource_group_portal_url }})"
+            echo "- ARM deployment: [${{ steps.provision.outputs.deployment_name }}](${{ steps.provision.outputs.deployment_portal_url }})"
+            echo "- Static Web App: [${{ steps.provision.outputs.static_web_app_name }}](${{ steps.provision.outputs.static_web_app_portal_url }})"
             echo "- Static Web App URL: ${{ steps.provision.outputs.static_web_app_url }}"
-            echo "- Backend App Service plan: \`${{ steps.provision.outputs.app_service_plan_name }}\`"
-            echo "- Backend Web App: \`${{ steps.provision.outputs.backend_web_app_name }}\`"
+            echo "- Backend App Service plan: [${{ steps.provision.outputs.app_service_plan_name }}](${{ steps.provision.outputs.app_service_plan_portal_url }})"
+            echo "- Backend Web App: [${{ steps.provision.outputs.backend_web_app_name }}](${{ steps.provision.outputs.backend_web_app_portal_url }})"
             echo "- Backend hostname: \`${{ steps.provision.outputs.backend_default_hostname }}\`"
             echo "- Backend API base URL: ${{ steps.provision.outputs.backend_api_base_url }}"
             echo "- Application Insights: \`${{ steps.provision.outputs.application_insights_name }}\`"

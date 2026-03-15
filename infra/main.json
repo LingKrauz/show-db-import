@@ -5,13 +5,13 @@
     "_generator": {
       "name": "bicep",
       "version": "0.41.2.15936",
-      "templateHash": "2461644744705297393"
+      "templateHash": "4554461157194061746"
     }
   },
   "parameters": {
     "workloadName": {
       "type": "string",
-      "defaultValue": "showdbimport",
+      "defaultValue": "show-db-import",
       "metadata": {
         "description": "Workload name used in resource naming."
       }
@@ -96,7 +96,10 @@
     "environmentToken": "[toLower(parameters('environmentName'))]",
     "regionToken": "[toLower(parameters('regionShort'))]",
     "uniqueSuffix": "[take(uniqueString(subscription().subscriptionId, resourceGroup().id, variables('workloadToken'), variables('environmentToken')), 6)]",
-    "commonTags": "[union(parameters('tags'), createObject('environment', parameters('environmentName'), 'managedBy', 'bicep', 'repository', 'show-db-import', 'workload', parameters('workloadName')))]",
+    "commonTags": "[union(parameters('tags'), createObject('environment', parameters('environmentName'), 'managedBy', 'bicep', 'repository', parameters('workloadName'), 'workload', parameters('workloadName')))]",
+    "resourceGroupPortalUrl": "[format('https://portal.azure.com/#resource{0}', resourceGroup().id)]",
+    "deploymentResourceId": "[resourceId('Microsoft.Resources/deployments', deployment().name)]",
+    "deploymentPortalUrl": "[format('https://portal.azure.com/#resource{0}', variables('deploymentResourceId'))]",
     "staticWebAppName": "[format('swa-{0}-{1}-{2}-{3}', variables('workloadToken'), variables('environmentToken'), parameters('instance'), variables('uniqueSuffix'))]",
     "appServicePlanName": "[format('plan-{0}-{1}-{2}-{3}', variables('workloadToken'), variables('environmentToken'), variables('regionToken'), parameters('instance'))]",
     "backendWebAppName": "[format('app-{0}-api-{1}-{2}-{3}', variables('workloadToken'), variables('environmentToken'), parameters('instance'), variables('uniqueSuffix'))]",
@@ -474,7 +477,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.41.2.15936",
-              "templateHash": "13973750830845443870"
+              "templateHash": "9998449347700844731"
             }
           },
           "parameters": {
@@ -505,7 +508,14 @@
             "environmentName": {
               "type": "string",
               "metadata": {
-                "description": "Deployment environment name."
+                "description": "Deployment environment name (e.g. dev, test, prod)."
+              }
+            },
+            "aspNetCoreEnvironment": {
+              "type": "string",
+              "defaultValue": "[if(equals(parameters('environmentName'), 'dev'), 'Development', if(equals(parameters('environmentName'), 'prod'), 'Production', parameters('environmentName')))]",
+              "metadata": {
+                "description": "ASP.NET Core environment name passed via ASPNETCORE_ENVIRONMENT."
               }
             },
             "runtimeStack": {
@@ -551,7 +561,7 @@
             "baseAppSettings": [
               {
                 "name": "ASPNETCORE_ENVIRONMENT",
-                "value": "[parameters('environmentName')]"
+                "value": "[parameters('aspNetCoreEnvironment')]"
               },
               {
                 "name": "FrontendUrl",
@@ -653,6 +663,30 @@
       "type": "string",
       "value": "[coalesce(tryGet(if(parameters('enableMonitoring'), reference(resourceId('Microsoft.Resources/deployments', 'monitoring'), '2025-04-01'), null()), 'outputs', 'applicationInsightsName', 'value'), '')]"
     },
+    "resourceGroupPortalUrl": {
+      "type": "string",
+      "value": "[variables('resourceGroupPortalUrl')]"
+    },
+    "appServicePlanPortalUrl": {
+      "type": "string",
+      "value": "[format('https://portal.azure.com/#resource{0}', reference(resourceId('Microsoft.Resources/deployments', 'backend-plan'), '2025-04-01').outputs.id.value)]"
+    },
+    "backendWebAppPortalUrl": {
+      "type": "string",
+      "value": "[format('https://portal.azure.com/#resource{0}', reference(resourceId('Microsoft.Resources/deployments', 'backend-web-app'), '2025-04-01').outputs.id.value)]"
+    },
+    "staticWebAppPortalUrl": {
+      "type": "string",
+      "value": "[format('https://portal.azure.com/#resource{0}', reference(resourceId('Microsoft.Resources/deployments', 'static-web-app'), '2025-04-01').outputs.id.value)]"
+    },
+    "deploymentName": {
+      "type": "string",
+      "value": "[deployment().name]"
+    },
+    "deploymentPortalUrl": {
+      "type": "string",
+      "value": "[variables('deploymentPortalUrl')]"
+    },
     "resourceIds": {
       "type": "object",
       "value": {
@@ -670,9 +704,20 @@
           "apiBaseUrl": "[reference(resourceId('Microsoft.Resources/deployments', 'backend-web-app'), '2025-04-01').outputs.url.value]",
           "appServicePlanName": "[reference(resourceId('Microsoft.Resources/deployments', 'backend-plan'), '2025-04-01').outputs.name.value]",
           "hostname": "[reference(resourceId('Microsoft.Resources/deployments', 'backend-web-app'), '2025-04-01').outputs.defaultHostname.value]",
+          "portalUrl": "[format('https://portal.azure.com/#resource{0}', reference(resourceId('Microsoft.Resources/deployments', 'backend-web-app'), '2025-04-01').outputs.id.value)]",
           "webAppName": "[reference(resourceId('Microsoft.Resources/deployments', 'backend-web-app'), '2025-04-01').outputs.name.value]"
         },
+        "deployment": {
+          "name": "[deployment().name]",
+          "portalUrl": "[variables('deploymentPortalUrl')]"
+        },
         "monitoring": "[if(parameters('enableMonitoring'), createObject('applicationInsightsName', coalesce(tryGet(if(parameters('enableMonitoring'), reference(resourceId('Microsoft.Resources/deployments', 'monitoring'), '2025-04-01'), null()), 'outputs', 'applicationInsightsName', 'value'), ''), 'logAnalyticsWorkspaceName', coalesce(tryGet(if(parameters('enableMonitoring'), reference(resourceId('Microsoft.Resources/deployments', 'monitoring'), '2025-04-01'), null()), 'outputs', 'logAnalyticsWorkspaceName', 'value'), '')), createObject('applicationInsightsName', '', 'logAnalyticsWorkspaceName', ''))]",
+        "portalLinks": {
+          "appServicePlan": "[format('https://portal.azure.com/#resource{0}', reference(resourceId('Microsoft.Resources/deployments', 'backend-plan'), '2025-04-01').outputs.id.value)]",
+          "backendWebApp": "[format('https://portal.azure.com/#resource{0}', reference(resourceId('Microsoft.Resources/deployments', 'backend-web-app'), '2025-04-01').outputs.id.value)]",
+          "resourceGroup": "[variables('resourceGroupPortalUrl')]",
+          "staticWebApp": "[format('https://portal.azure.com/#resource{0}', reference(resourceId('Microsoft.Resources/deployments', 'static-web-app'), '2025-04-01').outputs.id.value)]"
+        },
         "resourceGroupName": "[resourceGroup().name]",
         "resourceIds": {
           "appServicePlan": "[reference(resourceId('Microsoft.Resources/deployments', 'backend-plan'), '2025-04-01').outputs.id.value]",
@@ -684,6 +729,7 @@
         "staticWebApp": {
           "hostname": "[reference(resourceId('Microsoft.Resources/deployments', 'static-web-app'), '2025-04-01').outputs.defaultHostname.value]",
           "name": "[reference(resourceId('Microsoft.Resources/deployments', 'static-web-app'), '2025-04-01').outputs.name.value]",
+          "portalUrl": "[format('https://portal.azure.com/#resource{0}', reference(resourceId('Microsoft.Resources/deployments', 'static-web-app'), '2025-04-01').outputs.id.value)]",
           "url": "[reference(resourceId('Microsoft.Resources/deployments', 'static-web-app'), '2025-04-01').outputs.url.value]"
         }
       }

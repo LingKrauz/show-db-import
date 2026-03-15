@@ -1,7 +1,7 @@
 targetScope = 'resourceGroup'
 
 @description('Workload name used in resource naming.')
-param workloadName string = 'showdbimport'
+param workloadName string = 'show-db-import'
 
 @description('Deployment environment name such as dev, test, or prod.')
 param environmentName string = 'dev'
@@ -45,9 +45,15 @@ var uniqueSuffix = take(uniqueString(subscription().subscriptionId, resourceGrou
 var commonTags = union(tags, {
   environment: environmentName
   managedBy: 'bicep'
-  repository: 'show-db-import'
+  repository: workloadName
   workload: workloadName
 })
+var resourceGroupPortalUrl = 'https://portal.azure.com/#resource${resourceGroup().id}'
+var appServicePlanPortalUrl = 'https://portal.azure.com/#resource${appServicePlan.outputs.id}'
+var backendWebAppPortalUrl = 'https://portal.azure.com/#resource${webApp.outputs.id}'
+var staticWebAppPortalUrl = 'https://portal.azure.com/#resource${staticWebApp.outputs.id}'
+var deploymentResourceId = resourceId('Microsoft.Resources/deployments', deployment().name)
+var deploymentPortalUrl = 'https://portal.azure.com/#resource${deploymentResourceId}'
 
 var staticWebAppName = 'swa-${workloadToken}-${environmentToken}-${instance}-${uniqueSuffix}'
 var appServicePlanName = 'plan-${workloadToken}-${environmentToken}-${regionToken}-${instance}'
@@ -129,6 +135,12 @@ output backendDefaultHostname string = webApp.outputs.defaultHostname
 output backendApiBaseUrl string = webApp.outputs.url
 
 output applicationInsightsName string = monitoring.?outputs.applicationInsightsName ?? ''
+output resourceGroupPortalUrl string = resourceGroupPortalUrl
+output appServicePlanPortalUrl string = appServicePlanPortalUrl
+output backendWebAppPortalUrl string = backendWebAppPortalUrl
+output staticWebAppPortalUrl string = staticWebAppPortalUrl
+output deploymentName string = deployment().name
+output deploymentPortalUrl string = deploymentPortalUrl
 
 output resourceIds object = {
   appServicePlan: appServicePlan.outputs.id
@@ -143,7 +155,12 @@ output deploymentSummary object = {
     apiBaseUrl: webApp.outputs.url
     appServicePlanName: appServicePlan.outputs.name
     hostname: webApp.outputs.defaultHostname
+    portalUrl: backendWebAppPortalUrl
     webAppName: webApp.outputs.name
+  }
+  deployment: {
+    name: deployment().name
+    portalUrl: deploymentPortalUrl
   }
   monitoring: enableMonitoring ? {
     applicationInsightsName: monitoring.?outputs.applicationInsightsName ?? ''
@@ -151,6 +168,12 @@ output deploymentSummary object = {
   } : {
     applicationInsightsName: ''
     logAnalyticsWorkspaceName: ''
+  }
+  portalLinks: {
+    appServicePlan: appServicePlanPortalUrl
+    backendWebApp: backendWebAppPortalUrl
+    resourceGroup: resourceGroupPortalUrl
+    staticWebApp: staticWebAppPortalUrl
   }
   resourceGroupName: resourceGroup().name
   resourceIds: {
@@ -163,6 +186,7 @@ output deploymentSummary object = {
   staticWebApp: {
     hostname: staticWebApp.outputs.defaultHostname
     name: staticWebApp.outputs.name
+    portalUrl: staticWebAppPortalUrl
     url: staticWebApp.outputs.url
   }
 }

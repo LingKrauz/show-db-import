@@ -4,10 +4,55 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      environment_name:
+        description: Environment name used for Azure naming
+        required: false
+        default: prod
+        type: string
+      location:
+        description: Azure region for the deployment
+        required: false
+        default: eastus2
+        type: string
+      region_short:
+        description: Short Azure region code used in names
+        required: false
+        default: eus2
+        type: string
+      static_web_app_sku:
+        description: Static Web App SKU
+        required: false
+        default: Free
+        type: choice
+        options:
+          - Free
+          - Standard
+      app_service_plan_sku_name:
+        description: App Service plan SKU name
+        required: false
+        default: B1
+        type: string
+      app_service_plan_sku_tier:
+        description: App Service plan SKU tier
+        required: false
+        default: Basic
+        type: string
+      enable_monitoring:
+        description: Enable Application Insights and Log Analytics
+        required: false
+        default: true
+        type: boolean
 
 env:
-  RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
-  ENVIRONMENT: ${{ vars.ENVIRONMENT }}
+  DEFAULT_ENVIRONMENT_NAME: prod
+  DEFAULT_LOCATION: eastus2
+  DEFAULT_REGION_SHORT: eus2
+  DEFAULT_STATIC_WEB_APP_SKU: Free
+  DEFAULT_APP_SERVICE_PLAN_SKU_NAME: B1
+  DEFAULT_APP_SERVICE_PLAN_SKU_TIER: Basic
+  DEFAULT_ENABLE_MONITORING: 'true'
 
 jobs:
   lint:
@@ -37,24 +82,143 @@ jobs:
         working-directory: src/frontend
         run: npm run lint
 
-  deploy_backend:
+  provision_infrastructure:
     runs-on: ubuntu-latest
-    name: Publish & deploy backend
+    name: Provision infrastructure
     outputs:
-      backend_app_name: ${{ steps.discover-backend-app.outputs.backend_app_name }}
-      backend_host: ${{ steps.get-backend-hostname.outputs.backend_host }}
+      app_service_plan_name: ${{ steps.provision.outputs.app_service_plan_name }}
+      app_service_plan_portal_url: ${{ steps.provision.outputs.app_service_plan_portal_url }}
+      application_insights_name: ${{ steps.provision.outputs.application_insights_name }}
+      backend_api_base_url: ${{ steps.provision.outputs.backend_api_base_url }}
+      backend_default_hostname: ${{ steps.provision.outputs.backend_default_hostname }}
+      backend_web_app_name: ${{ steps.provision.outputs.backend_web_app_name }}
+      backend_web_app_portal_url: ${{ steps.provision.outputs.backend_web_app_portal_url }}
+      deployment_name: ${{ steps.provision.outputs.deployment_name }}
+      deployment_portal_url: ${{ steps.provision.outputs.deployment_portal_url }}
+      environment_name: ${{ steps.naming.outputs.environment_name }}
+      resource_group_name: ${{ steps.provision.outputs.resource_group_name }}
+      resource_group_portal_url: ${{ steps.provision.outputs.resource_group_portal_url }}
+      resource_ids: ${{ steps.provision.outputs.resource_ids }}
+      static_web_app_name: ${{ steps.provision.outputs.static_web_app_name }}
+      static_web_app_portal_url: ${{ steps.provision.outputs.static_web_app_portal_url }}
+      static_web_app_url: ${{ steps.provision.outputs.static_web_app_url }}
+      workload_name: ${{ steps.naming.outputs.workload_name }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Validate required variables
+      - name: Derive naming inputs from repository
+        id: naming
+        env:
+          APP_SERVICE_PLAN_SKU_NAME: ${{ github.event.inputs.app_service_plan_sku_name || env.DEFAULT_APP_SERVICE_PLAN_SKU_NAME }}
+          APP_SERVICE_PLAN_SKU_TIER: ${{ github.event.inputs.app_service_plan_sku_tier || env.DEFAULT_APP_SERVICE_PLAN_SKU_TIER }}
+          DEPLOY_ENVIRONMENT: ${{ github.event.inputs.environment_name || env.DEFAULT_ENVIRONMENT_NAME }}
+          ENABLE_MONITORING: ${{ github.event.inputs.enable_monitoring || env.DEFAULT_ENABLE_MONITORING }}
+          LOCATION: ${{ github.event.inputs.location || env.DEFAULT_LOCATION }}
+          REGION_SHORT: ${{ github.event.inputs.region_short || env.DEFAULT_REGION_SHORT }}
+          STATIC_WEB_APP_SKU: ${{ github.event.inputs.static_web_app_sku || env.DEFAULT_STATIC_WEB_APP_SKU }}
         run: |
-          missing=()
-          [ -z "$RESOURCE_GROUP" ] && missing+=("AZURE_RESOURCE_GROUP")
-          [ -z "$ENVIRONMENT" ] && missing+=("ENVIRONMENT")
-          if [ ${#missing[@]} -gt 0 ]; then
-            echo "::error::Missing repository variables: ${missing[*]}. Go to Settings > Variables > Actions to configure them."
-            exit 1
-          fi
+          repo_name="${{ github.event.repository.name }}"
+          repo_name_lower=$(echo "$repo_name" | tr '[:upper:]' '[:lower:]')
+          workload_name=$(echo "$repo_name_lower" | tr -cs 'a-z0-9-' '-' | sed 's/^-//; s/-$//')
+          environment_name=$(echo "$DEPLOY_ENVIRONMENT" | tr '[:upper:]' '[:lower:]')
+          resource_group_name="rg-${workload_name}-${environment_name}"
+
+          {
+            echo "workload_name=$workload_name"
+            echo "environment_name=$environment_name"
+            echo "location=$LOCATION"
+            echo "region_short=$REGION_SHORT"
+            echo "static_web_app_sku=$STATIC_WEB_APP_SKU"
+            echo "app_service_plan_sku_name=$APP_SERVICE_PLAN_SKU_NAME"
+            echo "app_service_plan_sku_tier=$APP_SERVICE_PLAN_SKU_TIER"
+            echo "enable_monitoring=$ENABLE_MONITORING"
+            echo "resource_group_name=$resource_group_name"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Ensure resource group exists
+        run: |
+          az group create \
+            --name "${{ steps.naming.outputs.resource_group_name }}" \
+            --location "${{ steps.naming.outputs.location }}" \
+            --tags repository="${{ steps.naming.outputs.workload_name }}" environment="${{ steps.naming.outputs.environment_name }}" \
+            --output none
+
+      - name: Provision infrastructure with Bicep
+        id: provision
+        run: |
+          deployment=$(az deployment group create \
+            --name "${{ steps.naming.outputs.workload_name }}-infra-${{ github.run_id }}" \
+            --resource-group "${{ steps.naming.outputs.resource_group_name }}" \
+            --template-file infra/main.bicep \
+            --parameters @infra/main.bicepparam \
+            --parameters \
+              workloadName="${{ steps.naming.outputs.workload_name }}" \
+              environmentName="${{ steps.naming.outputs.environment_name }}" \
+              location="${{ steps.naming.outputs.location }}" \
+              regionShort="${{ steps.naming.outputs.region_short }}" \
+              staticWebAppSku="${{ steps.naming.outputs.static_web_app_sku }}" \
+              appServicePlanSkuName="${{ steps.naming.outputs.app_service_plan_sku_name }}" \
+              appServicePlanSkuTier="${{ steps.naming.outputs.app_service_plan_sku_tier }}" \
+              enableMonitoring="${{ steps.naming.outputs.enable_monitoring }}" \
+            --query properties.outputs \
+            --output json)
+
+          echo "$deployment" > outputs.json
+
+          {
+            echo "app_service_plan_name=$(jq -r '.backendAppServicePlanName.value' outputs.json)"
+            echo "app_service_plan_portal_url=$(jq -r '.appServicePlanPortalUrl.value' outputs.json)"
+            echo "application_insights_name=$(jq -r '.applicationInsightsName.value' outputs.json)"
+            echo "backend_api_base_url=$(jq -r '.backendApiBaseUrl.value' outputs.json)"
+            echo "backend_default_hostname=$(jq -r '.backendDefaultHostname.value' outputs.json)"
+            echo "backend_web_app_name=$(jq -r '.backendWebAppName.value' outputs.json)"
+            echo "backend_web_app_portal_url=$(jq -r '.backendWebAppPortalUrl.value' outputs.json)"
+            echo "deployment_name=$(jq -r '.deploymentName.value' outputs.json)"
+            echo "deployment_portal_url=$(jq -r '.deploymentPortalUrl.value' outputs.json)"
+            echo "resource_group_name=$(jq -r '.resourceGroupName.value' outputs.json)"
+            echo "resource_group_portal_url=$(jq -r '.resourceGroupPortalUrl.value' outputs.json)"
+            echo "resource_ids=$(jq -c '.resourceIds.value' outputs.json)"
+            echo "static_web_app_name=$(jq -r '.staticWebAppName.value' outputs.json)"
+            echo "static_web_app_portal_url=$(jq -r '.staticWebAppPortalUrl.value' outputs.json)"
+            echo "static_web_app_url=$(jq -r '.staticWebAppUrl.value' outputs.json)"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Write infrastructure summary
+        run: |
+          {
+            echo "## Provisioned or reused infrastructure"
+            echo
+            echo "- Environment: \`${{ steps.naming.outputs.environment_name }}\`"
+            echo "- Resource group: [${{ steps.provision.outputs.resource_group_name }}](${{ steps.provision.outputs.resource_group_portal_url }})"
+            echo "- ARM deployment: [${{ steps.provision.outputs.deployment_name }}](${{ steps.provision.outputs.deployment_portal_url }})"
+            echo "- Static Web App: [${{ steps.provision.outputs.static_web_app_name }}](${{ steps.provision.outputs.static_web_app_portal_url }})"
+            echo "- Static Web App URL: ${{ steps.provision.outputs.static_web_app_url }}"
+            echo "- Backend App Service plan: [${{ steps.provision.outputs.app_service_plan_name }}](${{ steps.provision.outputs.app_service_plan_portal_url }})"
+            echo "- Backend Web App: [${{ steps.provision.outputs.backend_web_app_name }}](${{ steps.provision.outputs.backend_web_app_portal_url }})"
+            echo "- Backend API base URL: ${{ steps.provision.outputs.backend_api_base_url }}"
+            echo "- Application Insights: \`${{ steps.provision.outputs.application_insights_name }}\`"
+            echo
+            echo "### Resource IDs"
+            echo
+            echo '```json'
+            echo '${{ steps.provision.outputs.resource_ids }}'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Azure logout
+        run: az logout
+
+  deploy_backend:
+    runs-on: ubuntu-latest
+    name: Publish & deploy backend
+    needs: [provision_infrastructure]
+    steps:
+      - uses: actions/checkout@v4
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -70,42 +234,22 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Discover backend App Service
-        id: discover-backend-app
-        run: |
-          backend_app_name=$(az webapp list --resource-group "$RESOURCE_GROUP" --query "[?tags.repository=='show-db-import' && tags.service=='backend' && tags.component=='api' && tags.environment=='${ENVIRONMENT}'].name | [0]" -o tsv)
-          if [ -z "$backend_app_name" ]; then
-            echo "::error::No backend App Service found in resource group '$RESOURCE_GROUP' for environment '$ENVIRONMENT'. Provision infrastructure first so the Bicep tags are applied."
-            exit 1
-          fi
-          echo "backend_app_name=$backend_app_name" >> "$GITHUB_OUTPUT"
-
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
-          app-name: ${{ steps.discover-backend-app.outputs.backend_app_name }}
+          app-name: ${{ needs.provision_infrastructure.outputs.backend_web_app_name }}
           package: src/backend/publish
-
-      - name: Get backend hostname
-        id: get-backend-hostname
-        run: |
-          hostname=$(az webapp show --name "${{ steps.discover-backend-app.outputs.backend_app_name }}" --resource-group "$RESOURCE_GROUP" --query defaultHostName -o tsv)
-          if [ -z "$hostname" ]; then
-            echo "::error::No hostname found for app '${{ steps.discover-backend-app.outputs.backend_app_name }}' in resource group '$RESOURCE_GROUP'"
-            exit 1
-          fi
-          echo "backend_host=$hostname" >> "$GITHUB_OUTPUT"
 
       - name: Azure logout
         run: az logout
 
   build_and_deploy_frontend:
-    needs: [lint, deploy_backend]
+    needs: [lint, provision_infrastructure, deploy_backend]
     runs-on: ubuntu-latest
     name: Build and deploy frontend
     environment:
       name: Production
-      url: ${{ steps.deploy-to-azure.outputs.static_web_app_url }}
+      url: ${{ needs.provision_infrastructure.outputs.static_web_app_url }}
     concurrency:
       group: static-web-apps-production
       cancel-in-progress: true
@@ -133,14 +277,34 @@ jobs:
       - name: Build frontend
         working-directory: src/frontend
         env:
-          NEXT_PUBLIC_API_URL: https://${{ needs.deploy_backend.outputs.backend_host }}
+          NEXT_PUBLIC_API_URL: ${{ needs.provision_infrastructure.outputs.backend_api_base_url }}
         run: npm run build
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Get Static Web App deployment token
+        id: get-swa-token
+        run: |
+          deployment_token=$(az staticwebapp secrets list \
+            --name "${{ needs.provision_infrastructure.outputs.static_web_app_name }}" \
+            --resource-group "${{ needs.provision_infrastructure.outputs.resource_group_name }}" \
+            --query "properties.apiKey" \
+            -o tsv)
+          if [ -z "$deployment_token" ]; then
+            echo "::error::Unable to retrieve deployment token for Static Web App '${{ needs.provision_infrastructure.outputs.static_web_app_name }}'."
+            exit 1
+          fi
+          echo "::add-mask::$deployment_token"
+          echo "deployment_token=$deployment_token" >> "$GITHUB_OUTPUT"
 
       - name: Deploy to Azure Static Web Apps
         id: deploy-to-azure
         uses: Azure/static-web-apps-deploy@v1
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          azure_static_web_apps_api_token: ${{ steps.get-swa-token.outputs.deployment_token }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
           skip_app_build: true
@@ -148,17 +312,25 @@ jobs:
           api_location: ""
           output_location: ".next"
 
-      - name: Azure login
-        uses: azure/login@v2
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
       - name: Set backend CORS origin
         run: |
           az webapp config appsettings set \
-            --name "${{ needs.deploy_backend.outputs.backend_app_name }}" \
-            --resource-group "$RESOURCE_GROUP" \
-            --settings "FrontendUrl=${{ steps.deploy-to-azure.outputs.static_web_app_url }}"
+            --name "${{ needs.provision_infrastructure.outputs.backend_web_app_name }}" \
+            --resource-group "${{ needs.provision_infrastructure.outputs.resource_group_name }}" \
+            --settings "FrontendUrl=${{ needs.provision_infrastructure.outputs.static_web_app_url }}"
+
+      - name: Write deployment summary
+        run: |
+          {
+            echo "## Application deployment"
+            echo
+            echo "- Live frontend: ${{ needs.provision_infrastructure.outputs.static_web_app_url }}"
+            echo "- Live backend API: ${{ needs.provision_infrastructure.outputs.backend_api_base_url }}"
+            echo "- Resource group: ${{ needs.provision_infrastructure.outputs.resource_group_portal_url }}"
+            echo "- Static Web App portal: ${{ needs.provision_infrastructure.outputs.static_web_app_portal_url }}"
+            echo "- Backend Web App portal: ${{ needs.provision_infrastructure.outputs.backend_web_app_portal_url }}"
+            echo "- Deployment portal: ${{ needs.provision_infrastructure.outputs.deployment_portal_url }}"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Azure logout
         run: az logout
