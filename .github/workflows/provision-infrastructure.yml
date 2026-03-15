@@ -1,0 +1,142 @@
+name: Provision Azure infrastructure
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment_name:
+        description: Environment name used for resource naming
+        required: true
+        default: dev
+        type: string
+      location:
+        description: Azure region for the resource group and resources
+        required: true
+        default: eastus2
+        type: string
+      region_short:
+        description: Short Azure region code used in names
+        required: true
+        default: eus2
+        type: string
+      static_web_app_sku:
+        description: Static Web App SKU
+        required: true
+        default: Free
+        type: choice
+        options:
+          - Free
+          - Standard
+      app_service_plan_sku_name:
+        description: App Service plan SKU name
+        required: true
+        default: B1
+        type: string
+      app_service_plan_sku_tier:
+        description: App Service plan SKU tier
+        required: true
+        default: Basic
+        type: string
+      enable_monitoring:
+        description: Enable Application Insights and Log Analytics
+        required: true
+        default: true
+        type: boolean
+
+env:
+  RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+
+jobs:
+  provision:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate required variables
+        run: |
+          if [ -z "$RESOURCE_GROUP" ]; then
+            echo "::error::Missing repository variable AZURE_RESOURCE_GROUP. Set it in Settings > Variables > Actions."
+            exit 1
+          fi
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Ensure resource group exists
+        run: |
+          az group create \
+            --name "$RESOURCE_GROUP" \
+            --location "${{ inputs.location }}" \
+            --tags workload=show-db-import environment="${{ inputs.environment_name }}" \
+            --output none
+
+      - name: Provision infrastructure with Bicep
+        id: provision
+        run: |
+          deployment=$(az deployment group create \
+            --name "show-db-import-infra-${{ github.run_id }}" \
+            --resource-group "$RESOURCE_GROUP" \
+            --template-file infra/main.bicep \
+            --parameters @infra/main.bicepparam \
+            --parameters \
+              environmentName="${{ inputs.environment_name }}" \
+              location="${{ inputs.location }}" \
+              regionShort="${{ inputs.region_short }}" \
+              staticWebAppSku="${{ inputs.static_web_app_sku }}" \
+              appServicePlanSkuName="${{ inputs.app_service_plan_sku_name }}" \
+              appServicePlanSkuTier="${{ inputs.app_service_plan_sku_tier }}" \
+              enableMonitoring="${{ inputs.enable_monitoring }}" \
+            --query properties.outputs \
+            --output json)
+
+          echo "$deployment" > outputs.json
+
+          backend_web_app_name=$(jq -r '.backendWebAppName.value' outputs.json)
+          backend_api_base_url=$(jq -r '.backendApiBaseUrl.value' outputs.json)
+          backend_default_hostname=$(jq -r '.backendDefaultHostname.value' outputs.json)
+          static_web_app_name=$(jq -r '.staticWebAppName.value' outputs.json)
+          static_web_app_url=$(jq -r '.staticWebAppUrl.value' outputs.json)
+          resource_group_name=$(jq -r '.resourceGroupName.value' outputs.json)
+          app_service_plan_name=$(jq -r '.backendAppServicePlanName.value' outputs.json)
+          application_insights_name=$(jq -r '.applicationInsightsName.value' outputs.json)
+          resource_ids=$(jq -c '.resourceIds.value' outputs.json)
+
+          {
+            echo "backend_web_app_name=$backend_web_app_name"
+            echo "backend_api_base_url=$backend_api_base_url"
+            echo "backend_default_hostname=$backend_default_hostname"
+            echo "static_web_app_name=$static_web_app_name"
+            echo "static_web_app_url=$static_web_app_url"
+            echo "resource_group_name=$resource_group_name"
+            echo "app_service_plan_name=$app_service_plan_name"
+            echo "application_insights_name=$application_insights_name"
+            echo "resource_ids=$resource_ids"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Write deployment summary
+        run: |
+          {
+            echo "## Provisioned infrastructure"
+            echo
+            echo "- Resource group: \`${{ steps.provision.outputs.resource_group_name }}\`"
+            echo "- Static Web App: \`${{ steps.provision.outputs.static_web_app_name }}\`"
+            echo "- Static Web App URL: ${{ steps.provision.outputs.static_web_app_url }}"
+            echo "- Backend App Service plan: \`${{ steps.provision.outputs.app_service_plan_name }}\`"
+            echo "- Backend Web App: \`${{ steps.provision.outputs.backend_web_app_name }}\`"
+            echo "- Backend hostname: \`${{ steps.provision.outputs.backend_default_hostname }}\`"
+            echo "- Backend API base URL: ${{ steps.provision.outputs.backend_api_base_url }}"
+            echo "- Application Insights: \`${{ steps.provision.outputs.application_insights_name }}\`"
+            echo
+            echo "### Resource IDs"
+            echo
+            echo '```json'
+            echo '${{ steps.provision.outputs.resource_ids }}'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Azure logout
+        run: az logout

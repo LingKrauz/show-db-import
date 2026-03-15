@@ -6,7 +6,6 @@ on:
       - main
 
 env:
-  BACKEND_APP_NAME: ${{ vars.AZURE_BACKEND_APP_NAME }}
   RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
 
 jobs:
@@ -41,6 +40,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Publish & deploy backend
     outputs:
+      backend_app_name: ${{ steps.discover-backend-app.outputs.backend_app_name }}
       backend_host: ${{ steps.get-backend-hostname.outputs.backend_host }}
     steps:
       - uses: actions/checkout@v4
@@ -48,7 +48,6 @@ jobs:
       - name: Validate required variables
         run: |
           missing=()
-          [ -z "$BACKEND_APP_NAME" ] && missing+=("AZURE_BACKEND_APP_NAME")
           [ -z "$RESOURCE_GROUP" ] && missing+=("AZURE_RESOURCE_GROUP")
           if [ ${#missing[@]} -gt 0 ]; then
             echo "::error::Missing repository variables: ${missing[*]}. Go to Settings > Variables > Actions to configure them."
@@ -69,18 +68,28 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Discover backend App Service
+        id: discover-backend-app
+        run: |
+          backend_app_name=$(az webapp list --resource-group "$RESOURCE_GROUP" --query "[?tags.repository=='show-db-import' && tags.service=='backend' && tags.component=='api'].name | [0]" -o tsv)
+          if [ -z "$backend_app_name" ]; then
+            echo "::error::No backend App Service found in resource group '$RESOURCE_GROUP'. Provision infrastructure first so the Bicep tags are applied."
+            exit 1
+          fi
+          echo "backend_app_name=$backend_app_name" >> "$GITHUB_OUTPUT"
+
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
-          app-name: ${{ env.BACKEND_APP_NAME }}
+          app-name: ${{ steps.discover-backend-app.outputs.backend_app_name }}
           package: src/backend/publish
 
       - name: Get backend hostname
         id: get-backend-hostname
         run: |
-          hostname=$(az webapp show --name "$BACKEND_APP_NAME" --resource-group "$RESOURCE_GROUP" --query defaultHostName -o tsv)
+          hostname=$(az webapp show --name "${{ steps.discover-backend-app.outputs.backend_app_name }}" --resource-group "$RESOURCE_GROUP" --query defaultHostName -o tsv)
           if [ -z "$hostname" ]; then
-            echo "::error::No hostname found for app '$BACKEND_APP_NAME' in resource group '$RESOURCE_GROUP'"
+            echo "::error::No hostname found for app '${{ steps.discover-backend-app.outputs.backend_app_name }}' in resource group '$RESOURCE_GROUP'"
             exit 1
           fi
           echo "backend_host=$hostname" >> "$GITHUB_OUTPUT"
@@ -145,7 +154,7 @@ jobs:
       - name: Set backend CORS origin
         run: |
           az webapp config appsettings set \
-            --name "$BACKEND_APP_NAME" \
+            --name "${{ needs.deploy_backend.outputs.backend_app_name }}" \
             --resource-group "$RESOURCE_GROUP" \
             --settings "FrontendUrl=${{ steps.deploy-to-azure.outputs.static_web_app_url }}"
 
