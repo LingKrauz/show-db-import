@@ -60,9 +60,41 @@ var appServicePlanName = 'plan-${workloadToken}-${environmentToken}-${regionToke
 var backendWebAppName = 'app-${workloadToken}-api-${environmentToken}-${instance}-${uniqueSuffix}'
 var applicationInsightsName = 'appi-${workloadToken}-${environmentToken}'
 var logAnalyticsWorkspaceName = 'log-${workloadToken}-${environmentToken}-${regionToken}'
+var backendOutput = {
+  apiBaseUrl: webApp.outputs.url
+  appServicePlanName: appServicePlan.outputs.name
+  defaultHostname: webApp.outputs.defaultHostname
+  name: webApp.outputs.name
+  portalUrl: backendWebAppPortalUrl
+}
+var frontendOutput = {
+  defaultHostname: staticWebApp.outputs.defaultHostname
+  name: staticWebApp.outputs.name
+  portalUrl: staticWebAppPortalUrl
+  url: staticWebApp.outputs.url
+}
+var portalLinksOutput = {
+  appServicePlan: appServicePlanPortalUrl
+  backendWebApp: backendWebAppPortalUrl
+  deployment: deploymentPortalUrl
+  resourceGroup: resourceGroupPortalUrl
+  staticWebApp: staticWebAppPortalUrl
+}
+var monitoringOutput = {
+  applicationInsightsName: monitoring.?outputs.applicationInsightsName ?? ''
+  applicationInsightsResourceId: monitoring.?outputs.applicationInsightsId ?? ''
+  logAnalyticsWorkspaceName: monitoring.?outputs.logAnalyticsWorkspaceName ?? ''
+  logAnalyticsWorkspaceResourceId: monitoring.?outputs.logAnalyticsWorkspaceId ?? ''
+}
+var resourceIdsOutput = {
+  appServicePlan: appServicePlan.outputs.id
+  applicationInsights: monitoring.?outputs.applicationInsightsId ?? ''
+  backendWebApp: webApp.outputs.id
+  logAnalyticsWorkspace: monitoring.?outputs.logAnalyticsWorkspaceId ?? ''
+  staticWebApp: staticWebApp.outputs.id
+}
 
 module staticWebApp 'modules/static-web-app.bicep' = {
-  name: 'static-web-app'
   params: {
     location: location
     name: staticWebAppName
@@ -76,7 +108,6 @@ module staticWebApp 'modules/static-web-app.bicep' = {
 }
 
 module appServicePlan 'modules/app-service-plan.bicep' = {
-  name: 'backend-plan'
   params: {
     capacity: 1
     location: location
@@ -92,7 +123,6 @@ module appServicePlan 'modules/app-service-plan.bicep' = {
 }
 
 module monitoring 'modules/monitoring.bicep' = if (enableMonitoring) {
-  name: 'monitoring'
   params: {
     applicationInsightsName: applicationInsightsName
     location: location
@@ -105,7 +135,6 @@ module monitoring 'modules/monitoring.bicep' = if (enableMonitoring) {
 }
 
 module webApp 'modules/web-app.bicep' = {
-  name: 'backend-web-app'
   params: {
     additionalAppSettings: {}
     appInsightsConnectionString: monitoring.?outputs.connectionString ?? ''
@@ -142,51 +171,25 @@ output staticWebAppPortalUrl string = staticWebAppPortalUrl
 output deploymentName string = deployment().name
 output deploymentPortalUrl string = deploymentPortalUrl
 
-output resourceIds object = {
-  appServicePlan: appServicePlan.outputs.id
-  applicationInsights: monitoring.?outputs.applicationInsightsId ?? ''
-  backendWebApp: webApp.outputs.id
-  logAnalyticsWorkspace: monitoring.?outputs.logAnalyticsWorkspaceId ?? ''
-  staticWebApp: staticWebApp.outputs.id
-}
+output backend object = backendOutput
+
+output frontend object = frontendOutput
+
+output portalLinks object = portalLinksOutput
+
+output monitoring object = monitoringOutput
+
+output resourceIds object = resourceIdsOutput
 
 output deploymentSummary object = {
-  backend: {
-    apiBaseUrl: webApp.outputs.url
-    appServicePlanName: appServicePlan.outputs.name
-    hostname: webApp.outputs.defaultHostname
-    portalUrl: backendWebAppPortalUrl
-    webAppName: webApp.outputs.name
-  }
+  backend: backendOutput
   deployment: {
     name: deployment().name
     portalUrl: deploymentPortalUrl
   }
-  monitoring: enableMonitoring ? {
-    applicationInsightsName: monitoring.?outputs.applicationInsightsName ?? ''
-    logAnalyticsWorkspaceName: monitoring.?outputs.logAnalyticsWorkspaceName ?? ''
-  } : {
-    applicationInsightsName: ''
-    logAnalyticsWorkspaceName: ''
-  }
-  portalLinks: {
-    appServicePlan: appServicePlanPortalUrl
-    backendWebApp: backendWebAppPortalUrl
-    resourceGroup: resourceGroupPortalUrl
-    staticWebApp: staticWebAppPortalUrl
-  }
+  monitoring: monitoringOutput
+  portalLinks: portalLinksOutput
   resourceGroupName: resourceGroup().name
-  resourceIds: {
-    appServicePlan: appServicePlan.outputs.id
-    applicationInsights: monitoring.?outputs.applicationInsightsId ?? ''
-    backendWebApp: webApp.outputs.id
-    logAnalyticsWorkspace: monitoring.?outputs.logAnalyticsWorkspaceId ?? ''
-    staticWebApp: staticWebApp.outputs.id
-  }
-  staticWebApp: {
-    hostname: staticWebApp.outputs.defaultHostname
-    name: staticWebApp.outputs.name
-    portalUrl: staticWebAppPortalUrl
-    url: staticWebApp.outputs.url
-  }
+  resourceIds: resourceIdsOutput
+  staticWebApp: frontendOutput
 }
