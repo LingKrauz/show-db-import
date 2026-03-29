@@ -2,6 +2,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
+builder.Services.AddHttpClient();
+
 builder.Services.AddHttpLogging(logging =>
 {
     logging.LoggingFields = Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.All;
