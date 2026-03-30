@@ -1,11 +1,13 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { ScoreFormat, getScoreDisplay } from "@/app/utils/scoreFormat";
 
 interface AnimeShow {
   title: string;
   status: string;
   score: number | null;
+  scoreFormat: ScoreFormat;
 }
 
 interface AnimeResponse {
@@ -104,7 +106,7 @@ export default function Home() {
                   <span className="flex-1">{show.title}</span>
                   {show.score && (
                     <span className="ml-4 font-semibold text-blue-600 dark:text-blue-400 whitespace-nowrap">
-                      {show.score}/10
+                      {getScoreDisplay(show.score, show.scoreFormat)}
                     </span>
                   )}
                 </li>
