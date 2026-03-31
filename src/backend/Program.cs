@@ -36,14 +36,14 @@ var app = builder.Build();
 
 app.UseRouting();
 
-app.UseCors();
-
 app.UseHttpLogging();
 
 if (!app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
 }
+
+app.UseCors();
 
 app.UseAuthorization();
 
