@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState, useMemo } from "react";
+import Image from "next/image";
 import { ScoreFormat, getScoreDisplay } from "@/app/utils/scoreFormat";
 
 interface AnimeShow {
@@ -8,6 +9,7 @@ interface AnimeShow {
   status: string;
   score: number | null;
   scoreFormat: ScoreFormat;
+  coverImageUrl: string | null;
 }
 
 interface AnimeResponse {
@@ -25,7 +27,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>("title-asc");
-  const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -192,23 +194,39 @@ export default function Home() {
                 {sortedShows.map((show, index) => (
                   <div
                     key={index}
-                    className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-900 hover:shadow-md transition-shadow"
+                    className="rounded-lg border border-zinc-200 bg-zinc-50 overflow-hidden dark:border-zinc-700 dark:bg-zinc-900 hover:shadow-md transition-shadow"
                   >
-                    <h3 className="font-semibold text-zinc-900 dark:text-zinc-50 line-clamp-2 mb-3">
-                      {show.title}
-                    </h3>
-                    {show.score && (
-                      <div className="text-sm text-zinc-600 dark:text-zinc-400">
-                        Score: <span className="font-semibold text-blue-600 dark:text-blue-400">
-                          {getScoreDisplay(show.score, show.scoreFormat)}
-                        </span>
+                    {show.coverImageUrl ? (
+                      <Image
+                        src={show.coverImageUrl}
+                        alt={show.title}
+                        width={225}
+                        height={320}
+                        className="w-full h-40 object-cover"
+                        priority={false}
+                      />
+                    ) : (
+                      <div className="w-full h-40 bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center">
+                        <span className="text-zinc-500 dark:text-zinc-500 text-sm">No image</span>
                       </div>
                     )}
-                    {!show.score && (
-                      <div className="text-sm text-zinc-500 dark:text-zinc-500">
-                        No score
-                      </div>
-                    )}
+                    <div className="p-4">
+                      <h3 className="font-semibold text-zinc-900 dark:text-zinc-50 line-clamp-2 mb-3">
+                        {show.title}
+                      </h3>
+                      {show.score && (
+                        <div className="text-sm text-zinc-600 dark:text-zinc-400">
+                          Score: <span className="font-semibold text-blue-600 dark:text-blue-400">
+                            {getScoreDisplay(show.score, show.scoreFormat)}
+                          </span>
+                        </div>
+                      )}
+                      {!show.score && (
+                        <div className="text-sm text-zinc-500 dark:text-zinc-500">
+                          No score
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
