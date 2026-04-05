@@ -60,7 +60,7 @@ public static class ScoreFormatExtensions
     }
 }
 
-public record AnimeShow(string Title, string Status, decimal? Score, ScoreFormat ScoreFormat);
+public record AnimeShow(string Title, string Status, decimal? Score, ScoreFormat ScoreFormat, string? CoverImageUrl);
 
 public record AnimeResponse(List<AnimeShow> Shows);
 
@@ -96,6 +96,9 @@ public class AnimeController : ControllerBase
                                         romaji
                                     }
                                     status
+                                    coverImage {
+                                        large
+                                    }
                                 }
                             }
                         }
@@ -166,11 +169,19 @@ public class AnimeController : ControllerBase
                                     }
                                 }
 
+                                string? coverImageUrl = null;
+                                if (media.TryGetProperty("coverImage", out var coverImage) &&
+                                    coverImage.TryGetProperty("large", out var imageUrl))
+                                {
+                                    coverImageUrl = imageUrl.GetString();
+                                }
+
                                 shows.Add(new AnimeShow(
                                     romaji.GetString() ?? "Unknown",
                                     status,
                                     score,
-                                    ScoreFormat.POINT_10 // Will be set after detection
+                                    ScoreFormat.POINT_10, // Will be set after detection
+                                    coverImageUrl
                                 ));
                             }
                         }

@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState, useMemo } from "react";
+import Image from "next/image";
 import { ScoreFormat, getScoreDisplay } from "@/app/utils/scoreFormat";
 
 interface AnimeShow {
@@ -8,6 +9,7 @@ interface AnimeShow {
   status: string;
   score: number | null;
   scoreFormat: ScoreFormat;
+  coverImageUrl: string | null;
 }
 
 interface AnimeResponse {
@@ -16,6 +18,7 @@ interface AnimeResponse {
 }
 
 type SortOption = "title-asc" | "title-desc" | "score-asc" | "score-desc";
+type ViewMode = "list" | "grid";
 
 export default function Home() {
   const [username, setUsername] = useState("");
@@ -24,6 +27,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>("title-asc");
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -131,34 +135,102 @@ export default function Home() {
         )}
 
         {shows.length > 0 && (
-          <div className="w-full max-w-2xl">
-            <div className="mb-4 flex justify-between items-center gap-4">
+          <div className="w-full max-w-6xl">
+            <div className="mb-4 flex justify-between items-center gap-4 flex-wrap">
               <h2 className="text-xl font-semibold text-black dark:text-zinc-50">
                 Completed Shows ({shows.length})
               </h2>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="rounded-lg border border-zinc-300 bg-white px-3 py-1 text-sm text-zinc-900 focus:border-zinc-600 focus:outline-none dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-50 dark:focus:border-zinc-400"
-              >
-                <option value="title-asc">Sort: Title (A-Z)</option>
-                <option value="title-desc">Sort: Title (Z-A)</option>
-                <option value="score-asc">Sort: Score (Low to High)</option>
-                <option value="score-desc">Sort: Score (High to Low)</option>
-              </select>
+              <div className="flex items-center gap-3">
+                <div className="flex gap-2 border border-zinc-300 rounded-lg p-1 dark:border-zinc-600">
+                  <button
+                    onClick={() => setViewMode("list")}
+                    className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                      viewMode === "list"
+                        ? "bg-blue-600 text-white dark:bg-blue-500"
+                        : "text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                    }`}
+                  >
+                    List
+                  </button>
+                  <button
+                    onClick={() => setViewMode("grid")}
+                    className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                      viewMode === "grid"
+                        ? "bg-blue-600 text-white dark:bg-blue-500"
+                        : "text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                    }`}
+                  >
+                    Grid
+                  </button>
+                </div>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as SortOption)}
+                  className="rounded-lg border border-zinc-300 bg-white px-3 py-1 text-sm text-zinc-900 focus:border-zinc-600 focus:outline-none dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-50 dark:focus:border-zinc-400"
+                >
+                  <option value="title-asc">Sort: Title (A-Z)</option>
+                  <option value="title-desc">Sort: Title (Z-A)</option>
+                  <option value="score-asc">Sort: Score (Low to High)</option>
+                  <option value="score-desc">Sort: Score (High to Low)</option>
+                </select>
+              </div>
             </div>
-            <ol className="space-y-2 list-decimal list-inside">
-              {sortedShows.map((show, index) => (
-                <li key={index} className="text-zinc-700 dark:text-zinc-300 break-words flex justify-between items-start">
-                  <span className="flex-1">{show.title}</span>
-                  {show.score && (
-                    <span className="ml-4 font-semibold text-blue-600 dark:text-blue-400 whitespace-nowrap">
-                      {getScoreDisplay(show.score, show.scoreFormat)}
-                    </span>
-                  )}
-                </li>
-              ))}
-            </ol>
+
+            {viewMode === "list" ? (
+              <ol className="space-y-2 list-decimal list-inside">
+                {sortedShows.map((show, index) => (
+                  <li key={index} className="text-zinc-700 dark:text-zinc-300 break-words flex justify-between items-start">
+                    <span className="flex-1">{show.title}</span>
+                    {show.score && (
+                      <span className="ml-4 font-semibold text-blue-600 dark:text-blue-400 whitespace-nowrap">
+                        {getScoreDisplay(show.score, show.scoreFormat)}
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {sortedShows.map((show, index) => (
+                  <div
+                    key={index}
+                    className="rounded-lg border border-zinc-200 bg-zinc-50 overflow-hidden dark:border-zinc-700 dark:bg-zinc-900 hover:shadow-md transition-shadow"
+                  >
+                    {show.coverImageUrl ? (
+                      <Image
+                        src={show.coverImageUrl}
+                        alt={show.title}
+                        width={225}
+                        height={320}
+                        className="w-full h-40 object-cover"
+                        priority={false}
+                      />
+                    ) : (
+                      <div className="w-full h-40 bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center">
+                        <span className="text-zinc-500 dark:text-zinc-500 text-sm">No image</span>
+                      </div>
+                    )}
+                    <div className="p-4">
+                      <h3 className="font-semibold text-zinc-900 dark:text-zinc-50 line-clamp-2 mb-3">
+                        {show.title}
+                      </h3>
+                      {show.score && (
+                        <div className="text-sm text-zinc-600 dark:text-zinc-400">
+                          Score: <span className="font-semibold text-blue-600 dark:text-blue-400">
+                            {getScoreDisplay(show.score, show.scoreFormat)}
+                          </span>
+                        </div>
+                      )}
+                      {!show.score && (
+                        <div className="text-sm text-zinc-500 dark:text-zinc-500">
+                          No score
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </main>
