@@ -10,6 +10,7 @@ interface AnimeShow {
   score: number | null;
   scoreFormat: ScoreFormat;
   coverImageUrl: string | null;
+  aniListId: number | null;
 }
 
 interface AnimeResponse {
@@ -52,6 +53,12 @@ export default function Home() {
       setError(err instanceof Error ? err.message : "Failed to fetch anime list");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleOpenAniList = (aniListId: number | null) => {
+    if (aniListId) {
+      window.open(`https://anilist.co/anime/${aniListId}`, "_blank");
     }
   };
 
@@ -194,7 +201,8 @@ export default function Home() {
                 {sortedShows.map((show, index) => (
                   <div
                     key={index}
-                    className="rounded-lg border border-zinc-200 bg-zinc-50 overflow-hidden dark:border-zinc-700 dark:bg-zinc-900 hover:shadow-md transition-shadow"
+                    onClick={() => handleOpenAniList(show.aniListId)}
+                    className={`rounded-lg border border-zinc-200 bg-zinc-50 overflow-hidden dark:border-zinc-700 dark:bg-zinc-900 hover:shadow-md transition-shadow ${show.aniListId ? "cursor-pointer" : ""}`}
                   >
                     {show.coverImageUrl ? (
                       <Image
