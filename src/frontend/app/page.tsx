@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useState, useMemo } from "react";
 import { ScoreFormat, getScoreDisplay } from "@/app/utils/scoreFormat";
 
 interface AnimeShow {
@@ -15,12 +15,15 @@ interface AnimeResponse {
   error?: string;
 }
 
+type SortOption = "title-asc" | "title-desc" | "score-asc" | "score-desc";
+
 export default function Home() {
   const [username, setUsername] = useState("");
   const [shows, setShows] = useState<AnimeShow[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [sortBy, setSortBy] = useState<SortOption>("title-asc");
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -28,6 +31,7 @@ export default function Home() {
     setShows([]);
     setLoading(true);
     setSubmitted(false);
+    setSortBy("title-asc");
 
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5132";
@@ -46,6 +50,37 @@ export default function Home() {
       setLoading(false);
     }
   };
+
+  const sortedShows = useMemo(() => {
+    const sorted = [...shows];
+    
+    switch (sortBy) {
+      case "title-asc":
+        sorted.sort((a, b) => a.title.localeCompare(b.title));
+        break;
+      case "title-desc":
+        sorted.sort((a, b) => b.title.localeCompare(a.title));
+        break;
+      case "score-asc":
+        sorted.sort((a, b) => {
+          if (a.score === null && b.score === null) return 0;
+          if (a.score === null) return 1;
+          if (b.score === null) return -1;
+          return a.score - b.score;
+        });
+        break;
+      case "score-desc":
+        sorted.sort((a, b) => {
+          if (a.score === null && b.score === null) return 0;
+          if (a.score === null) return 1;
+          if (b.score === null) return -1;
+          return b.score - a.score;
+        });
+        break;
+    }
+    
+    return sorted;
+  }, [shows, sortBy]);
 
   return (
     <div className="flex min-h-screen bg-zinc-50 font-sans dark:bg-black">
@@ -97,11 +132,23 @@ export default function Home() {
 
         {shows.length > 0 && (
           <div className="w-full max-w-2xl">
-            <h2 className="mb-4 text-xl font-semibold text-black dark:text-zinc-50">
-              Completed Shows ({shows.length})
-            </h2>
+            <div className="mb-4 flex justify-between items-center gap-4">
+              <h2 className="text-xl font-semibold text-black dark:text-zinc-50">
+                Completed Shows ({shows.length})
+              </h2>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as SortOption)}
+                className="rounded-lg border border-zinc-300 bg-white px-3 py-1 text-sm text-zinc-900 focus:border-zinc-600 focus:outline-none dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-50 dark:focus:border-zinc-400"
+              >
+                <option value="title-asc">Sort: Title (A-Z)</option>
+                <option value="title-desc">Sort: Title (Z-A)</option>
+                <option value="score-asc">Sort: Score (Low to High)</option>
+                <option value="score-desc">Sort: Score (High to Low)</option>
+              </select>
+            </div>
             <ol className="space-y-2 list-decimal list-inside">
-              {shows.map((show, index) => (
+              {sortedShows.map((show, index) => (
                 <li key={index} className="text-zinc-700 dark:text-zinc-300 break-words flex justify-between items-start">
                   <span className="flex-1">{show.title}</span>
                   {show.score && (
