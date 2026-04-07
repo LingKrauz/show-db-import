@@ -1,36 +1,144 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Frontend
+
+A Next.js 16 + React 19 web application for displaying anime data from AniList and MyAnimeList.
+
+## Tech Stack
+
+- **Framework**: Next.js 16 (App Router)
+- **UI Library**: React 19
+- **Language**: TypeScript
+- **Styling**: TailwindCSS 4
+- **Linting**: ESLint 9
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+ and npm
+
+### Installation
+
+```bash
+npm install
+```
+
+### Development
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Available Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run dev       # Start dev server with hot reload (port 3000)
+npm run build     # Build for production
+npm run start     # Start production server
+npm run lint      # Run ESLint on all files
+npm run lint -- <file>  # Lint a specific file
+```
 
-## Learn More
+## Project Structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+app/
+├── layout.tsx           # Root layout (metadata, providers)
+├── page.tsx             # Home page
+├── components/          # Reusable components
+└── api/                 # API routes (if needed)
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Key Conventions
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Path Aliases
 
-## Deploy on Vercel
+Use `@/*` for clean imports:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```tsx
+// Good
+import { Component } from '@/components/Component'
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+// Avoid
+import { Component } from '../../../components/Component'
+```
+
+### Styling
+
+- Use TailwindCSS utility classes only
+- No CSS modules unless absolutely necessary
+- Component styling lives in the JSX
+
+```tsx
+export function Card() {
+  return (
+    <div className="rounded-lg bg-white p-4 shadow-md">
+      {/* content */}
+    </div>
+  )
+}
+```
+
+### Components
+
+- Place reusable components in `app/components/`
+- Keep components small and focused
+- Use React hooks for state management
+
+## Environment Variables
+
+Create a `.env.local` file for local development:
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:5132
+```
+
+Variables prefixed with `NEXT_PUBLIC_` are exposed to the browser.
+
+## API Integration
+
+The frontend makes requests to the backend API:
+
+```tsx
+const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/endpoint`)
+```
+
+During CI/CD deployment, `NEXT_PUBLIC_API_URL` is set to the production backend URL.
+
+## Building for Production
+
+```bash
+npm run build
+npm run start
+```
+
+The production build is optimized and ready for deployment to Azure Static Web Apps.
+
+## Troubleshooting
+
+**Port 3000 already in use?**
+```bash
+npm run dev -- -p 3001
+```
+
+**ESLint errors?**
+```bash
+npm run lint
+```
+
+Review and fix issues in your code. Some can be auto-fixed with:
+```bash
+npm run lint -- --fix
+```
+
+## Resources
+
+- [Next.js Documentation](https://nextjs.org/docs)
+- [React Documentation](https://react.dev)
+- [TailwindCSS Documentation](https://tailwindcss.com)
+- [TypeScript Documentation](https://www.typescriptlang.org/docs)
+
+## Contributing
+
+For changes to the frontend, ensure ESLint passes and the build succeeds locally before pushing.
