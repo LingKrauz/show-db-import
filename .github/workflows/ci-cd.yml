@@ -85,6 +85,7 @@ jobs:
   provision_infrastructure:
     runs-on: ubuntu-latest
     name: Provision infrastructure
+    environment: Production
     permissions:
       id-token: write
       contents: read
@@ -225,6 +226,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Publish & deploy backend
     needs: [provision_infrastructure]
+    environment: Production
     permissions:
       id-token: write
       contents: read
