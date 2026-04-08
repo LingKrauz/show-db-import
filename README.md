@@ -44,15 +44,15 @@ This project uses **GitHub Actions** for automated deployment to Azure:
 
 ### Setup (First Time)
 
-1. Add Azure service principal secrets to the repository:
+1. Add Azure OIDC repository secrets to the repository:
    - `AZURE_CLIENT_ID`
-   - `AZURE_CREDENTIALS` (JSON with clientId, clientSecret, subscriptionId, tenantId)
    - `AZURE_SUBSCRIPTION_ID`
    - `AZURE_TENANT_ID`
+2. Configure a federated credential on the Microsoft Entra app registration for GitHub Actions on this repository and branch.
 
-2. Push to `main` or run the deployment workflow manually.
+3. Push to `main` or run the deployment workflow manually.
 
-3. The workflow will:
+4. The workflow will:
    - Provision Azure resources using Bicep
    - Deploy the backend to App Service
    - Build and deploy the frontend to Static Web Apps
