@@ -263,9 +263,6 @@ jobs:
     permissions:
       id-token: write
       contents: read
-    environment:
-      name: Production
-      url: ${{ needs.provision_infrastructure.outputs.static_web_app_url }}
     concurrency:
       group: static-web-apps-production
       cancel-in-progress: true
