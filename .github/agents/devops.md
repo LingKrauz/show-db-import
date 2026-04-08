@@ -36,7 +36,9 @@ GitHub Actions workflows, Azure deployment (Static Web Apps for frontend, App Se
 
 | Name | Type | Purpose |
 |------|------|---------|
-| `AZURE_CREDENTIALS` | Secret | Service principal JSON (clientId, clientSecret, subscriptionId, tenantId) for Azure login |
+| `AZURE_CLIENT_ID` | Secret | Microsoft Entra app registration client ID used by GitHub OIDC |
+| `AZURE_SUBSCRIPTION_ID` | Secret | Azure subscription used by the deployment workflows |
+| `AZURE_TENANT_ID` | Secret | Microsoft Entra tenant ID used by GitHub OIDC |
 | `AZURE_BACKEND_APP_NAME` | Repo variable | Backend App Service name (set in Settings → Variables → Actions) |
 | `AZURE_RESOURCE_GROUP` | Repo variable | Azure resource group containing the backend App Service |
 | `AZURE_STATIC_WEB_APPS_API_TOKEN` | Secret | Deployment token for Azure Static Web Apps |
@@ -47,7 +49,7 @@ GitHub Actions workflows, Azure deployment (Static Web Apps for frontend, App Se
 - Use `actions/cache@v4` for `node_modules` keyed on `package-lock.json` hash
 - Use `actions/setup-node@v4` with Node 20.x
 - Use `actions/setup-dotnet@v4` — match the version in `src/backend/backend.csproj` (`net10.0`)
-- Use `azure/login@v2` for Azure authentication
+- Use `azure/login@v2` with GitHub OIDC (`id-token: write` plus `client-id`, `tenant-id`, and `subscription-id`) for Azure authentication
 - Use `azure/webapps-deploy@v3` for App Service deployment
 - Production deployment uses concurrency group `static-web-apps-production` with `cancel-in-progress: true`
 - Always `az logout` after Azure CLI operations
