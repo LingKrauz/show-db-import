@@ -1,6 +1,6 @@
 # Frontend
 
-A Next.js 16 + React 19 web application for displaying anime data from AniList and MyAnimeList.
+A Next.js 16 + React 19 web application for displaying anime data from AniList.
 
 ## Tech Stack
 
