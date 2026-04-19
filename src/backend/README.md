@@ -1,6 +1,6 @@
 # Backend
 
-An ASP.NET Core 10.0 Web API for managing anime data imports from AniList and MyAnimeList.
+An ASP.NET Core 10.0 Web API for managing anime data imports from AniList.
 
 ## Tech Stack
 

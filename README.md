@@ -1,6 +1,6 @@
 # show-db-import
 
-A full-stack web application for importing and displaying anime user data from AniList and MyAnimeList (MAL). Built with Next.js, React, ASP.NET Core, and deployed to Azure.
+A full-stack web application for importing and displaying anime user data from AniList. Built with Next.js, React, ASP.NET Core, and deployed to Azure.
 
 **[Frontend README](./src/frontend/README.md) • [Backend README](./src/backend/README.md) • [Infrastructure README](./infra/README.md)**
 
