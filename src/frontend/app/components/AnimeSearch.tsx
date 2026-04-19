@@ -3,7 +3,7 @@
 import { FormEvent, useState, useMemo, useRef, useEffect } from "react";
 import Image from "next/image";
 import { ScoreFormat, getScoreDisplay } from "@/app/utils/scoreFormat";
-import { useVirtualizer } from "@tanstack/react-virtual";
+import { useWindowVirtualizer } from "@tanstack/react-virtual";
 
 interface AnimeShow {
   title: string;
@@ -31,12 +31,14 @@ export default function AnimeSearch() {
   const [sortBy, setSortBy] = useState<SortOption>("title-asc");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
 
-  const listParentRef = useRef<HTMLDivElement>(null);
-  const [isMounted, setIsMounted] = useState(false);
+  const listRef = useRef<HTMLOListElement>(null);
+  const [scrollMargin, setScrollMargin] = useState(0);
 
   useEffect(() => {
-    setIsMounted(true);
-  }, []);
+    if (listRef.current) {
+      setScrollMargin(listRef.current.offsetTop);
+    }
+  }, [shows]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -101,12 +103,11 @@ export default function AnimeSearch() {
     return sorted;
   }, [shows, sortBy]);
 
-  const listVirtualizer = useVirtualizer({
+  const listVirtualizer = useWindowVirtualizer({
     count: sortedShows.length,
-    getScrollElement: () => listParentRef.current,
     estimateSize: () => 40,
     overscan: 10,
-    enabled: isMounted,
+    scrollMargin,
   });
 
   return (
@@ -200,33 +201,32 @@ export default function AnimeSearch() {
             </div>
 
             {viewMode === "list" ? (
-              <div ref={listParentRef} className="max-h-[70vh] overflow-auto">
-                <ol
-                  className="relative list-decimal list-inside"
-                  style={{ height: `${listVirtualizer.getTotalSize()}px` }}
-                >
-                  {listVirtualizer.getVirtualItems().map((virtualItem) => {
-                    const show = sortedShows[virtualItem.index];
-                    return (
-                      <li
-                        key={virtualItem.index}
-                        className="absolute w-full text-zinc-700 dark:text-zinc-300 break-words flex justify-between items-start"
-                        style={{
-                          height: `${virtualItem.size}px`,
-                          transform: `translateY(${virtualItem.start}px)`,
-                        }}
-                      >
-                        <span className="flex-1">{show.title}</span>
-                        {show.score && (
-                          <span className="ml-4 font-semibold text-blue-600 dark:text-blue-400 whitespace-nowrap">
-                            {getScoreDisplay(show.score, show.scoreFormat)}
-                          </span>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ol>
-              </div>
+              <ol
+                ref={listRef}
+                className="relative list-decimal list-inside"
+                style={{ height: `${listVirtualizer.getTotalSize()}px` }}
+              >
+                {listVirtualizer.getVirtualItems().map((virtualItem) => {
+                  const show = sortedShows[virtualItem.index];
+                  return (
+                    <li
+                      key={virtualItem.index}
+                      className="absolute w-full text-zinc-700 dark:text-zinc-300 break-words flex justify-between items-start"
+                      style={{
+                        height: `${virtualItem.size}px`,
+                        transform: `translateY(${virtualItem.start - listVirtualizer.options.scrollMargin}px)`,
+                      }}
+                    >
+                      <span className="flex-1">{show.title}</span>
+                      {show.score && (
+                        <span className="ml-4 font-semibold text-blue-600 dark:text-blue-400 whitespace-nowrap">
+                          {getScoreDisplay(show.score, show.scoreFormat)}
+                        </span>
+                      )}
+                    </li>
+                  );
+                })}
+              </ol>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {sortedShows.map((show, index) => (
