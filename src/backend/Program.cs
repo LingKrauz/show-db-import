@@ -10,9 +10,15 @@ builder.Services.AddControllers()
 
 builder.Services.AddHttpClient();
 
+builder.Services.AddResponseCompression();
+builder.Services.AddMemoryCache();
+
 builder.Services.AddHttpLogging(logging =>
 {
-    logging.LoggingFields = Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.All;
+    logging.LoggingFields = builder.Environment.IsDevelopment()
+        ? Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.All
+        : Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.RequestPath
+          | Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.ResponseStatusCode;
     logging.MediaTypeOptions.AddText("application/json");
 });
 
@@ -33,6 +39,8 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+app.UseResponseCompression();
 
 app.UseRouting();
 

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
 using System.Text.Json;
 
 namespace backend.Controllers;
@@ -70,20 +71,29 @@ public class AnimeController : ControllerBase
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<AnimeController> _logger;
+    private readonly IMemoryCache _cache;
 
-    public AnimeController(HttpClient httpClient, ILogger<AnimeController> logger)
+    public AnimeController(HttpClient httpClient, ILogger<AnimeController> logger, IMemoryCache cache)
     {
         _httpClient = httpClient;
         _logger = logger;
+        _cache = cache;
     }
 
     [HttpGet("completed/{username}")]
+    [ResponseCache(Duration = 300, Location = ResponseCacheLocation.Any)]
     public async Task<IActionResult> GetCompleted(string username)
     {
         try
         {
             if (string.IsNullOrWhiteSpace(username))
                 return BadRequest(new { error = "Username cannot be empty" });
+
+            var cacheKey = $"anime_completed_{username.ToLowerInvariant()}";
+            if (_cache.TryGetValue(cacheKey, out AnimeResponse? cached))
+            {
+                return Ok(cached);
+            }
 
             var query = @"
                 query($userName:String) {
@@ -122,7 +132,7 @@ public class AnimeController : ControllerBase
 
             if (!response.IsSuccessStatusCode)
             {
-                _logger.LogError($"AniList API returned status {response.StatusCode}");
+                _logger.LogError("AniList API returned status {StatusCode}", response.StatusCode);
                 return StatusCode((int)response.StatusCode, new { error = "Failed to fetch from AniList API" });
             }
 
@@ -132,7 +142,7 @@ public class AnimeController : ControllerBase
             // Check for GraphQL errors
             if (jsonDoc.RootElement.TryGetProperty("errors", out var errors))
             {
-                _logger.LogWarning($"AniList GraphQL error for user {username}: {errors}");
+                _logger.LogWarning("AniList GraphQL error for user {Username}: {Errors}", username, errors);
                 return BadRequest(new { error = "User not found or API error" });
             }
 
@@ -203,11 +213,13 @@ public class AnimeController : ControllerBase
             // Update all shows with the detected format
             shows = shows.Select(s => s with { ScoreFormat = detectedFormat }).ToList();
 
-            return Ok(new AnimeResponse(shows.OrderBy(s => s.Title).ToList()));
+            var animeResponse = new AnimeResponse(shows);
+            _cache.Set(cacheKey, animeResponse, TimeSpan.FromMinutes(5));
+            return Ok(animeResponse);
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error fetching anime for user {username}: {ex.Message}");
+            _logger.LogError(ex, "Error fetching anime for user {Username}", username);
             return StatusCode(500, new { error = "Internal server error" });
         }
     }
