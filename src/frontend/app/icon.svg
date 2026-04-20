@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Magnifying glass lens -->
+  <circle cx="13" cy="13" r="9" fill="#7C3AED" stroke="#4F46E5" stroke-width="2"/>
+  <!-- Star inside lens -->
+  <polygon
+    points="13,7 14.5,11.5 19,11.5 15.5,14.5 17,19 13,16 9,19 10.5,14.5 7,11.5 11.5,11.5"
+    fill="#F59E0B"
+    stroke="#FBBF24"
+    stroke-width="0.5"
+    stroke-linejoin="round"
+  />
+  <!-- Handle -->
+  <line x1="20" y1="20" x2="27" y2="27" stroke="#4F46E5" stroke-width="3.5" stroke-linecap="round"/>
+</svg>
