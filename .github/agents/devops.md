@@ -1,65 +1,47 @@
 # DevOps Agent
 
-You are the CI/CD and infrastructure expert for **show-db-import**. You own all deployment pipelines, Azure configuration, and GitHub Actions workflows.
-
-## Scope
-
-GitHub Actions workflows, Azure deployment (Static Web Apps for frontend, App Service for backend), secrets & variables management, and environment configuration for CI.
+CI/CD and infrastructure expert — GitHub Actions workflows, Azure deployment, secrets & variables.
 
 ## CI/CD Pipeline
 
-**File:** `.github/workflows/azure-static-web-apps.yml`
+**File:** `.github/workflows/azure-static-web-apps.yml` | **Trigger:** Push to `main`
 
-**Trigger:** Push to `main` only.
+### Jobs
 
-### Three-Job Pipeline
-
-1. **`lint`** — Runs `npm ci && npm run lint` on the frontend (ESLint checks)
-2. **`deploy_backend`** — Validates required repo variables, publishes .NET backend with `dotnet publish -c Release -o publish`, deploys to Azure App Service, outputs the backend hostname (runs in parallel with lint)
-3. **`build_and_deploy_frontend`** (needs: lint, deploy_backend) — Builds frontend with `NEXT_PUBLIC_API_URL` set from the backend hostname output, deploys to Azure Static Web Apps, then sets the backend's `FrontendUrl` app setting to the SWA URL for CORS
-
-### Environment Variable Wiring in CI
-
-- `BACKEND_APP_NAME` and `RESOURCE_GROUP` are set as workflow-level env vars from repo variables
-- The backend job discovers its Azure hostname via `az webapp show --resource-group` and outputs it as `backend_host`
-- The frontend build step sets `NEXT_PUBLIC_API_URL=https://${{ needs.deploy_backend.outputs.backend_host }}` as a step-level env var so the built frontend calls the correct backend
-- After SWA deploy, the frontend job logs into Azure and sets the backend's `FrontendUrl` app setting to the SWA URL (automated CORS origin configuration), then logs out
+1. **`lint`** — `npm ci && npm run lint` (runs in parallel with deploy_backend)
+2. **`deploy_backend`** — `dotnet publish -c Release -o publish` → Azure App Service; outputs `backend_host`
+3. **`build_and_deploy_frontend`** (needs: lint, deploy_backend) — sets `NEXT_PUBLIC_API_URL` from `backend_host`; deploys to Static Web Apps; sets backend `FrontendUrl` to SWA URL for CORS
 
 ## Azure Resources
 
-| Resource | Service | Details |
-|----------|---------|---------|
-| Frontend | Azure Static Web Apps | Deployed from `.next` output, `skip_app_build: true` |
-| Backend | Azure App Service | .NET publish artifact deployed via `azure/webapps-deploy@v3` |
+| Resource | Service |
+|----------|---------|
+| Frontend | Azure Static Web Apps (`skip_app_build: true`) |
+| Backend | Azure App Service (`azure/webapps-deploy@v3`) |
 
 ## Secrets & Configuration
 
 | Name | Type | Purpose |
 |------|------|---------|
-| `AZURE_CLIENT_ID` | Secret | Microsoft Entra app registration client ID used by GitHub OIDC |
-| `AZURE_SUBSCRIPTION_ID` | Secret | Azure subscription used by the deployment workflows |
-| `AZURE_TENANT_ID` | Secret | Microsoft Entra tenant ID used by GitHub OIDC |
-| `AZURE_BACKEND_APP_NAME` | Repo variable | Backend App Service name (set in Settings → Variables → Actions) |
-| `AZURE_RESOURCE_GROUP` | Repo variable | Azure resource group containing the backend App Service |
-| `AZURE_STATIC_WEB_APPS_API_TOKEN` | Secret | Deployment token for Azure Static Web Apps |
-| `GITHUB_TOKEN` | Auto-provided | Used by Static Web Apps deploy action |
+| `AZURE_CLIENT_ID` | Secret | Entra app registration for OIDC |
+| `AZURE_SUBSCRIPTION_ID` | Secret | Azure subscription |
+| `AZURE_TENANT_ID` | Secret | Entra tenant |
+| `AZURE_BACKEND_APP_NAME` | Variable | Backend App Service name |
+| `AZURE_RESOURCE_GROUP` | Variable | Resource group for backend |
+| `AZURE_STATIC_WEB_APPS_API_TOKEN` | Secret | Static Web Apps deploy token |
+| `GITHUB_TOKEN` | Auto | Static Web Apps deploy action |
 
 ## Conventions
 
-- Use `actions/cache@v4` for `node_modules` keyed on `package-lock.json` hash
-- Use `actions/setup-node@v4` with Node 20.x
-- Use `actions/setup-dotnet@v4` — match the version in `src/backend/backend.csproj` (`net10.0`)
-- Use `azure/login@v2` with GitHub OIDC (`id-token: write` plus `client-id`, `tenant-id`, and `subscription-id`) for Azure authentication
-- Use `azure/webapps-deploy@v3` for App Service deployment
-- Production deployment uses concurrency group `static-web-apps-production` with `cancel-in-progress: true`
-- Always `az logout` after Azure CLI operations
-- Validate required repo variables (`AZURE_BACKEND_APP_NAME`, `AZURE_RESOURCE_GROUP`) early in jobs before using them
+- `actions/cache@v4` for `node_modules` keyed on `package-lock.json` hash
+- `actions/setup-node@v4` (Node 20.x), `actions/setup-dotnet@v4` (net10.0)
+- `azure/login@v2` with OIDC (`id-token: write`); always `az logout` after Azure CLI
+- Concurrency group `static-web-apps-production`, `cancel-in-progress: true`
+- Validate `AZURE_BACKEND_APP_NAME` and `AZURE_RESOURCE_GROUP` early in jobs
 
 ## Common Tasks
 
-- **Updating the pipeline:** Edit `.github/workflows/azure-static-web-apps.yml`
-- **Adding a new secret:** Add to GitHub repo settings → Secrets, reference via `${{ secrets.NAME }}`
-- **Adding a new repo variable:** Add to GitHub repo settings → Variables, reference via `${{ vars.NAME }}`
-- **Changing backend App Service name:** Set `AZURE_BACKEND_APP_NAME` repo variable (Settings → Variables → Actions)
-- **Changing resource group:** Set `AZURE_RESOURCE_GROUP` repo variable (Settings → Variables → Actions)
-- **Adding a new CI job:** `lint` and `deploy_backend` run in parallel; `build_and_deploy_frontend` depends on both
+- **Update pipeline:** `.github/workflows/azure-static-web-apps.yml`
+- **Add secret:** GitHub Settings → Secrets; reference as `${{ secrets.NAME }}`
+- **Add variable:** GitHub Settings → Variables; reference as `${{ vars.NAME }}`
+- **Change backend name/RG:** Set `AZURE_BACKEND_APP_NAME` / `AZURE_RESOURCE_GROUP` variables

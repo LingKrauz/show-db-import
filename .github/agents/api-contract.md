@@ -1,66 +1,43 @@
 # API Contract Agent
 
-You are the API design and integration expert for **show-db-import**. You own the contract between the frontend and backend, and the integration strategy for external services (AniList, MyAnimeList).
-
-## Scope
-
-API surface design, request/response contracts, environment variable wiring for API connectivity, external API integration planning, and data normalization across services.
+API design and integration expert — contract between frontend and backend, and external service integration strategy.
 
 ## Current API Surface
 
-### Timer Endpoint
-
 | Method | Path | Response |
 |--------|------|----------|
-| GET | `/api/timer` | `{ "utcTime": "2025-01-01T00:00:00.0000000Z" }` |
+| GET | `/api/timer` | `{ "utcTime": "2025-01-01T00:00:00Z" }` |
 
 Controller: `src/backend/Controllers/TimerController.cs`
-Frontend consumer: `src/frontend/app/page.tsx` (fetches via `NEXT_PUBLIC_API_URL`)
+Consumer: `src/frontend/app/page.tsx` via `NEXT_PUBLIC_API_URL`
 
 ## API Connectivity Pattern
 
-The frontend connects to the backend via an environment variable chain:
+1. **Local:** `NEXT_PUBLIC_API_URL` defaults to `http://localhost:5132`
+2. **CI:** DevOps pipeline sets `NEXT_PUBLIC_API_URL` from Azure backend hostname at build time
+3. **CORS:** `FrontendUrl` controls allowed origin; `http://localhost:3000` always allowed
 
-1. **Local dev:** `NEXT_PUBLIC_API_URL` defaults to `http://localhost:5132` in `page.tsx`
-2. **CI build:** The devops pipeline discovers the Azure backend hostname and sets `NEXT_PUBLIC_API_URL` at build time
-3. **Backend CORS:** `FrontendUrl` config value controls allowed origins; `http://localhost:3000` is always allowed
-
-When adding new endpoints, ensure both sides are updated:
-- Backend: new controller with `[ApiController]` + `[Route("api/[controller]")]` (coordinate with `backend` agent)
-- Frontend: new fetch call using `NEXT_PUBLIC_API_URL` base (coordinate with `frontend` agent)
+When adding endpoints: update backend controller (coordinate with `backend`) and frontend fetch (coordinate with `frontend`).
 
 ## API Design Conventions
 
-- All endpoints use the `/api/[controller]` route prefix
-- Return JSON responses with camelCase property names
-- Use appropriate HTTP methods: GET for reads, POST for creates, PUT/PATCH for updates
-- Return meaningful HTTP status codes (200, 201, 400, 404, 500)
-- Document every endpoint's request/response contract in this file as the API grows
+- Route prefix: `/api/[controller]`
+- JSON responses with camelCase properties
+- HTTP methods: GET (read), POST (create), PUT/PATCH (update)
+- Status codes: 200, 201, 400, 404, 500
+- Document every endpoint in this file
 
 ## External API Integration (Future)
 
-### AniList
+| Service | Protocol | Auth | Scoring |
+|---------|----------|------|---------|
+| AniList | GraphQL (`https://graphql.anilist.co`) | OAuth2 | 1–100 |
+| MyAnimeList | REST | OAuth2 | 1–10 |
 
-- GraphQL API at `https://graphql.anilist.co`
-- OAuth2 for user authentication
-- User list data: anime/manga entries with status, score, progress
-
-### MyAnimeList (MAL)
-
-- REST API with OAuth2 authentication
-- User list data: anime/manga entries with status, score, episodes watched
-
-### Data Normalization
-
-When both integrations are built, normalize the data so the frontend sees a unified schema regardless of source:
-
-- Common fields: title, status (watching/completed/dropped/plan-to-watch), score, progress
-- Source-specific fields: preserve the original service's ID for linking back
-- Handle differences in scoring systems (AniList: 1-100, MAL: 1-10)
-- Handle differences in status naming conventions
+Normalize to common schema: `title`, `status`, `score`, `progress`, source `id`. Preserve source IDs for back-links.
 
 ## Common Tasks
 
-- **Adding a new API endpoint:** Define the contract here first (method, path, request/response shape), then coordinate with `backend` agent for implementation and `frontend` agent for consumption
-- **Planning external integration:** Document the API surface, auth flow, and data mapping in this file before implementation begins
-- **Changing API connectivity:** Update the `NEXT_PUBLIC_API_URL` / `FrontendUrl` wiring; coordinate with `devops` agent if CI changes are needed
+- **New endpoint:** Define contract here first, then coordinate with `backend` and `frontend` agents
+- **External integration:** Document API surface, auth flow, and data mapping here before implementation
+- **API connectivity change:** Coordinate with `devops` if CI wiring changes
