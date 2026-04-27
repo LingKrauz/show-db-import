@@ -148,6 +148,8 @@ public class AnimeController : ControllerBase
 
             var shows = new List<AnimeShow>();
             var scores = new List<decimal>();
+            var seenIds = new HashSet<int>();
+            var seenTitles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             if (jsonDoc.RootElement.TryGetProperty("data", out var data) &&
                 data.TryGetProperty("MediaListCollection", out var collection) &&
@@ -193,8 +195,14 @@ public class AnimeController : ControllerBase
                                     aniListId = id;
                                 }
 
+                                var titleStr = romaji.GetString() ?? "Unknown";
+
+                                // Skip duplicates — can occur when users have custom lists
+                                if (aniListId.HasValue ? !seenIds.Add(aniListId.Value) : !seenTitles.Add(titleStr))
+                                    continue;
+
                                 shows.Add(new AnimeShow(
-                                    romaji.GetString() ?? "Unknown",
+                                    titleStr,
                                     status,
                                     score,
                                     ScoreFormat.POINT_10, // Will be set after detection
