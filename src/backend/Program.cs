@@ -10,6 +10,19 @@ builder.Services.AddControllers()
 
 builder.Services.AddHttpClient();
 
+// Azure OpenAI
+var openAIEndpoint = builder.Configuration["AzureOpenAI:Endpoint"];
+if (!string.IsNullOrEmpty(openAIEndpoint))
+{
+    builder.Services.AddSingleton(new Azure.AI.OpenAI.AzureOpenAIClient(
+        new Uri(openAIEndpoint),
+        new Azure.Identity.DefaultAzureCredential()));
+}
+
+builder.Services.AddHttpClient<backend.Services.AniListService>();
+builder.Services.AddScoped<backend.Services.IAniListService, backend.Services.AniListService>();
+builder.Services.AddScoped<backend.Services.IRecommendationService, backend.Services.RecommendationService>();
+
 builder.Services.AddResponseCompression();
 builder.Services.AddMemoryCache();
 
