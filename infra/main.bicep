@@ -58,6 +58,9 @@ var deploymentPortalUrl = 'https://portal.azure.com/#resource${deploymentResourc
 var staticWebAppName = 'swa-${workloadToken}-${environmentToken}-${instance}-${uniqueSuffix}'
 var appServicePlanName = 'plan-${workloadToken}-${environmentToken}-${regionToken}-${instance}'
 var backendWebAppName = 'app-${workloadToken}-api-${environmentToken}-${instance}-${uniqueSuffix}'
+var openAIAccountName = 'oai-${workloadToken}-${environmentToken}-${instance}-${uniqueSuffix}'
+var openAIDeploymentName = 'gpt-4o-mini'
+var openAIEndpoint = 'https://${toLower(openAIAccountName)}.openai.azure.com/'
 var applicationInsightsName = 'appi-${workloadToken}-${environmentToken}'
 var logAnalyticsWorkspaceName = 'log-${workloadToken}-${environmentToken}-${regionToken}'
 var backendOutput = {
@@ -91,6 +94,7 @@ var resourceIdsOutput = {
   applicationInsights: monitoring.?outputs.applicationInsightsId ?? ''
   backendWebApp: webApp.outputs.id
   logAnalyticsWorkspace: monitoring.?outputs.logAnalyticsWorkspaceId ?? ''
+  openAI: openAI.outputs.id
   staticWebApp: staticWebApp.outputs.id
 }
 
@@ -136,7 +140,10 @@ module monitoring 'modules/monitoring.bicep' = if (enableMonitoring) {
 
 module webApp 'modules/web-app.bicep' = {
   params: {
-    additionalAppSettings: {}
+    additionalAppSettings: {
+      AzureOpenAI__Endpoint: openAIEndpoint
+      AzureOpenAI__DeploymentName: openAIDeploymentName
+    }
     appInsightsConnectionString: monitoring.?outputs.connectionString ?? ''
     environmentName: environmentName
     frontendUrl: staticWebApp.outputs.url
@@ -148,6 +155,19 @@ module webApp 'modules/web-app.bicep' = {
       component: 'api'
       host: 'app-service'
       service: 'backend'
+    })
+  }
+}
+
+module openAI 'modules/azure-openai.bicep' = {
+  params: {
+    deploymentName: openAIDeploymentName
+    location: location
+    name: openAIAccountName
+    principalId: webApp.outputs.principalId
+    tags: union(commonTags, {
+      component: 'ai'
+      service: 'recommendations'
     })
   }
 }
@@ -170,6 +190,9 @@ output backendWebAppPortalUrl string = backendWebAppPortalUrl
 output staticWebAppPortalUrl string = staticWebAppPortalUrl
 output deploymentName string = deployment().name
 output deploymentPortalUrl string = deploymentPortalUrl
+
+output openAIAccountName string = openAI.outputs.name
+output openAIEndpoint string = openAI.outputs.endpoint
 
 output backend object = backendOutput
 

@@ -15,7 +15,7 @@ Be concise. Minimize output tokens while preserving accuracy:
 ## Architecture
 
 - **Frontend** (`src/frontend/`): Next.js + React + TypeScript + TailwindCSS
-- **Backend** (`src/backend/`): ASP.NET Core (.NET 10.0) Web API
+- **Backend** (`src/backend/`): ASP.NET Core (.NET 10.0) Web API; `Services/` layer for business logic; Azure OpenAI integration for AI recommendations
 
 ## Agents
 
