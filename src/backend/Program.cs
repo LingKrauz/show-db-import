@@ -17,9 +17,16 @@ builder.Services.AddHttpClient();
 var openAIEndpoint = builder.Configuration["AzureOpenAI:Endpoint"];
 if (!string.IsNullOrEmpty(openAIEndpoint))
 {
+    var tenantId = builder.Configuration["AzureOpenAI:TenantId"];
+    var credentialOptions = new Azure.Identity.DefaultAzureCredentialOptions();
+    if (!string.IsNullOrEmpty(tenantId))
+    {
+        credentialOptions.TenantId = tenantId;
+    }
+    
     builder.Services.AddSingleton(new Azure.AI.OpenAI.AzureOpenAIClient(
         new Uri(openAIEndpoint),
-        new Azure.Identity.DefaultAzureCredential()));
+        new Azure.Identity.DefaultAzureCredential(credentialOptions)));
 }
 
 builder.Services.AddHttpClient<backend.Services.AniListService>();
