@@ -9,7 +9,7 @@ const geistSans = Geist({
 
 export const metadata: Metadata = {
   title: "AniList Show Finder",
-  description: "Find and import your anime shows from AniList and MyAnimeList",
+  description: "Find and import your anime shows from AniList",
 };
 
 export default function RootLayout({

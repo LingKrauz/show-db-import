@@ -10,13 +10,17 @@ Domain expert for `src/backend/` — controllers, middleware, `Program.cs`, serv
 ## Environment Variables
 
 - `FrontendUrl` — frontend CORS origin; defaults to `http://localhost:3000` locally
+- `AzureOpenAI:Endpoint` — Azure OpenAI account endpoint URL; if unset, AI recommendations are disabled
+- `AzureOpenAI:DeploymentName` — Azure OpenAI model deployment name (e.g. `gpt-4o-mini`)
 
 ## Conventions
 
 - **Controllers:** `[ApiController]` + `[Route("api/[controller]")]`; return `IActionResult`; follow `TimerController` pattern
+- **Services:** Business logic lives in `src/backend/Services/`; register interfaces in `Program.cs`; current services: `IAniListService`/`AniListService`, `IRecommendationService`/`RecommendationService`
 - **CORS:** Configured in `Program.cs`; `FrontendUrl` controls allowed origin; `http://localhost:3000` always allowed locally
 - **HTTPS:** Redirection only in production (`!app.Environment.IsDevelopment()`)
 - **C#:** Nullable enabled; implicit usings; file-scoped namespaces (e.g., `namespace backend.Controllers;`)
+- **Azure OpenAI:** `AzureOpenAIClient` registered in `Program.cs` using `DefaultAzureCredential`; only registered when `AzureOpenAI:Endpoint` is configured
 
 ## Commands
 
@@ -35,7 +39,7 @@ dotnet publish -c Release -o publish    # Production build
 
 | File | Purpose |
 |------|---------|
-| `backend.csproj` | .NET project config |
+| `backend.csproj` | .NET project config; key packages: `Azure.AI.OpenAI`, `Azure.Identity` |
 | `appsettings.json` | Runtime config |
 | `appsettings.Development.json` | Dev overrides |
 | `Properties/launchSettings.json` | Local launch profiles |

@@ -30,6 +30,8 @@ CI/CD and infrastructure expert — GitHub Actions workflows, Azure deployment, 
 | `AZURE_RESOURCE_GROUP` | Variable | Resource group for backend |
 | `AZURE_STATIC_WEB_APPS_API_TOKEN` | Secret | Static Web Apps deploy token |
 | `GITHUB_TOKEN` | Auto | Static Web Apps deploy action |
+| `AzureOpenAI__Endpoint` | App setting (from Bicep) | Azure OpenAI endpoint; set via `infra/modules/azure-openai.bicep` |
+| `AzureOpenAI__DeploymentName` | App setting (from Bicep) | Azure OpenAI deployment name; set via `infra/modules/azure-openai.bicep` |
 
 ## Conventions
 

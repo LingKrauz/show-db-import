@@ -8,7 +8,30 @@ builder.Services.AddControllers()
         );
     });
 
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
 builder.Services.AddHttpClient();
+
+// Azure OpenAI
+var openAIEndpoint = builder.Configuration["AzureOpenAI:Endpoint"];
+if (!string.IsNullOrEmpty(openAIEndpoint))
+{
+    var tenantId = builder.Configuration["AzureOpenAI:TenantId"];
+    var credentialOptions = new Azure.Identity.DefaultAzureCredentialOptions();
+    if (!string.IsNullOrEmpty(tenantId))
+    {
+        credentialOptions.TenantId = tenantId;
+    }
+    
+    builder.Services.AddSingleton(new Azure.AI.OpenAI.AzureOpenAIClient(
+        new Uri(openAIEndpoint),
+        new Azure.Identity.DefaultAzureCredential(credentialOptions)));
+}
+
+builder.Services.AddHttpClient<backend.Services.AniListService>();
+builder.Services.AddScoped<backend.Services.IAniListService, backend.Services.AniListService>();
+builder.Services.AddScoped<backend.Services.IRecommendationService, backend.Services.RecommendationService>();
 
 builder.Services.AddResponseCompression();
 builder.Services.AddMemoryCache();
@@ -41,6 +64,12 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 app.UseResponseCompression();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
 app.UseRouting();
 
