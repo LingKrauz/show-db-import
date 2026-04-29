@@ -8,18 +8,18 @@ public record RecommendationResponse(List<Recommendation> Recommendations);
 
 [ApiController]
 [Route("api/[controller]")]
-public class RecommendationController : ControllerBase
+public class RecommendationsController : ControllerBase
 {
     private readonly IAniListService _aniListService;
     private readonly IRecommendationService _recommendationService;
     private readonly IMemoryCache _cache;
-    private readonly ILogger<RecommendationController> _logger;
+    private readonly ILogger<RecommendationsController> _logger;
 
-    public RecommendationController(
+    public RecommendationsController(
         IAniListService aniListService,
         IRecommendationService recommendationService,
         IMemoryCache cache,
-        ILogger<RecommendationController> logger)
+        ILogger<RecommendationsController> logger)
     {
         _aniListService = aniListService;
         _recommendationService = recommendationService;

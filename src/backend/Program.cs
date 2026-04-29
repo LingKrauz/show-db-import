@@ -8,6 +8,9 @@ builder.Services.AddControllers()
         );
     });
 
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
 builder.Services.AddHttpClient();
 
 // Azure OpenAI
@@ -54,6 +57,12 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 app.UseResponseCompression();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
 app.UseRouting();
 
