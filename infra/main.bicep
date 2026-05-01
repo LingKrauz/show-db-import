@@ -94,7 +94,7 @@ var resourceIdsOutput = {
   applicationInsights: monitoring.?outputs.applicationInsightsId ?? ''
   backendWebApp: webApp.outputs.id
   logAnalyticsWorkspace: monitoring.?outputs.logAnalyticsWorkspaceId ?? ''
-  openAI: openAI.outputs.id
+  // openAI: openAI.outputs.id
   staticWebApp: staticWebApp.outputs.id
 }
 
@@ -159,7 +159,7 @@ module webApp 'modules/web-app.bicep' = {
   }
 }
 
-module openAI 'modules/azure-openai.bicep' = {
+/* module openAI 'modules/azure-openai.bicep' = {
   params: {
     deploymentName: openAIDeploymentName
     location: location
@@ -171,7 +171,7 @@ module openAI 'modules/azure-openai.bicep' = {
     })
   }
 }
-
+ */
 output resourceGroupName string = resourceGroup().name
 
 output staticWebAppName string = staticWebApp.outputs.name
@@ -191,8 +191,8 @@ output staticWebAppPortalUrl string = staticWebAppPortalUrl
 output deploymentName string = deployment().name
 output deploymentPortalUrl string = deploymentPortalUrl
 
-output openAIAccountName string = openAI.outputs.name
-output openAIEndpoint string = openAI.outputs.endpoint
+// output openAIAccountName string = openAI.outputs.name
+// output openAIEndpoint string = openAI.outputs.endpoint
 
 output backend object = backendOutput
 
