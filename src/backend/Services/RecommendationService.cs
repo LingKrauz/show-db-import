@@ -12,6 +12,12 @@ public interface IRecommendationService
     Task<List<Recommendation>> GetRecommendationsAsync(List<AnimeShow> shows);
 }
 
+public class NullRecommendationService : IRecommendationService
+{
+    public Task<List<Recommendation>> GetRecommendationsAsync(List<AnimeShow> shows)
+        => Task.FromResult(new List<Recommendation>());
+}
+
 public class RecommendationService : IRecommendationService
 {
     private readonly AzureOpenAIClient _client;

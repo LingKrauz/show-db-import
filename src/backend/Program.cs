@@ -31,7 +31,11 @@ if (!string.IsNullOrEmpty(openAIEndpoint))
 
 builder.Services.AddHttpClient<backend.Services.AniListService>();
 builder.Services.AddScoped<backend.Services.IAniListService, backend.Services.AniListService>();
-builder.Services.AddScoped<backend.Services.IRecommendationService, backend.Services.RecommendationService>();
+
+if (!string.IsNullOrEmpty(openAIEndpoint))
+    builder.Services.AddScoped<backend.Services.IRecommendationService, backend.Services.RecommendationService>();
+else
+    builder.Services.AddScoped<backend.Services.IRecommendationService, backend.Services.NullRecommendationService>();
 
 builder.Services.AddResponseCompression();
 builder.Services.AddMemoryCache();
