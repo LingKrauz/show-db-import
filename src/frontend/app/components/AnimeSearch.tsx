@@ -44,6 +44,8 @@ export default function AnimeSearch() {
   const [recError, setRecError] = useState<string | null>(null);
   const [recFetched, setRecFetched] = useState(false);
 
+  const [slowLoadWarning, setSlowLoadWarning] = useState(false);
+
   const listRef = useRef<HTMLOListElement>(null);
   const [scrollMargin, setScrollMargin] = useState(0);
 
@@ -52,6 +54,15 @@ export default function AnimeSearch() {
       setScrollMargin(listRef.current.offsetTop);
     }
   }, [shows]);
+
+  useEffect(() => {
+    if (!loading) {
+      setSlowLoadWarning(false);
+      return;
+    }
+    const timer = setTimeout(() => setSlowLoadWarning(true), 10000);
+    return () => clearTimeout(timer);
+  }, [loading]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -181,6 +192,14 @@ export default function AnimeSearch() {
           <div className="w-full max-w-md rounded-lg border border-red-300 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950">
             <p className="text-red-800 dark:text-red-200">
               Error: {error}
+            </p>
+          </div>
+        )}
+
+        {slowLoadWarning && loading && (
+          <div className="w-full max-w-md rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-700 dark:bg-amber-950">
+            <p className="text-amber-800 dark:text-amber-200 text-sm">
+              Still loading? The service may be starting up after a period of inactivity. Wait about a minute, then refresh the page if it&apos;s still not responding.
             </p>
           </div>
         )}
