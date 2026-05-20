@@ -34,6 +34,9 @@ param backendRuntimeStack string = 'DOTNETCORE|10.0'
 @description('Enable baseline monitoring resources.')
 param enableMonitoring bool = true
 
+@description('Azure OpenAI endpoint URL to set on the backend web app.')
+param openAIEndpoint string = ''
+
 @description('Optional tags to apply to all resources.')
 param tags object = {}
 
@@ -59,7 +62,6 @@ var staticWebAppName = 'swa-${workloadToken}-${environmentToken}-${instance}-${u
 var appServicePlanName = 'plan-${workloadToken}-${environmentToken}-${regionToken}-${instance}'
 var backendWebAppName = 'app-${workloadToken}-api-${environmentToken}-${instance}-${uniqueSuffix}'
 var openAIDeploymentName = 'gpt-4.1'
-var openAIEndpoint = 'https://placeholder.openai.azure.com/openai/v1'
 var applicationInsightsName = 'appi-${workloadToken}-${environmentToken}'
 var logAnalyticsWorkspaceName = 'log-${workloadToken}-${environmentToken}-${regionToken}'
 var backendOutput = {
