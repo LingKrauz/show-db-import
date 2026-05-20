@@ -21,7 +21,7 @@ public class RecommendationService : IRecommendationService
     public RecommendationService(AzureOpenAIClient client, IConfiguration configuration, ILogger<RecommendationService> logger)
     {
         _client = client;
-        _deploymentName = configuration["AzureOpenAI:DeploymentName"] ?? "gpt-4o-mini";
+        _deploymentName = configuration["AzureOpenAI:DeploymentName"] ?? "gpt-4.1";
         _logger = logger;
     }
 
@@ -69,7 +69,7 @@ public class RecommendationService : IRecommendationService
 
             var elements = JsonSerializer.Deserialize<JsonElement[]>(text);
             if (elements == null)
-                return [];
+                throw new NullReferenceException("Failed to parse recommendations from Azure OpenAI response: " + text);
 
             return elements.Select(e => new Recommendation(
                 e.TryGetProperty("title", out var t) ? t.GetString() ?? "" : "",
@@ -79,7 +79,7 @@ public class RecommendationService : IRecommendationService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting recommendations from Azure OpenAI");
-            return [];
+            throw;
         }
     }
 }
