@@ -103,6 +103,7 @@ jobs:
               appServicePlanSkuTier="${{ inputs.app_service_plan_sku_tier }}" \
               enableMonitoring="${{ inputs.enable_monitoring }}" \
               openAIEndpoint="${{ secrets.AZURE_OPENAI_ENDPOINT }}" \
+              tenantId="${{ secrets.AZURE_TENANTID }}" \
             --query properties.outputs \
             --output json)
 
