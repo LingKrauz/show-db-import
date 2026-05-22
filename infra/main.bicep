@@ -37,6 +37,9 @@ param enableMonitoring bool = true
 @description('Azure OpenAI endpoint URL to set on the backend web app.')
 param openAIEndpoint string = ''
 
+@description('Azure tenant ID.')
+param tenantId string = ''
+
 @description('Optional tags to apply to all resources.')
 param tags object = {}
 
