@@ -49,14 +49,14 @@ public class RecommendationsController : ControllerBase
         {
             var recommendations = await _recommendationService.GetRecommendationsAsync(shows);
 
-            // Enrich each recommendation with AniList id and cover image in parallel
-            var enriched = await Task.WhenAll(recommendations.Select(async rec =>
+            var enrichedList = new List<Recommendation>();
+            foreach (var rec in recommendations)
             {
                 var (aniListId, coverImageUrl) = await _aniListService.SearchAnimeAsync(rec.Title);
-                return rec with { AniListId = aniListId, CoverImageUrl = coverImageUrl };
-            }));
+                enrichedList.Add(rec with { AniListId = aniListId, CoverImageUrl = coverImageUrl });
+            }
 
-            var response = new RecommendationResponse(enriched.ToList());
+            var response = new RecommendationResponse(enrichedList);
             _cache.Set(cacheKey, response, TimeSpan.FromMinutes(5));
             return Ok(response);
         }
