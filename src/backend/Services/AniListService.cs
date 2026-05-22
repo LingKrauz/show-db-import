@@ -1,6 +1,7 @@
 using backend.Models;
 using Microsoft.Extensions.Caching.Memory;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace backend.Services;
 
@@ -174,10 +175,34 @@ public class AniListService : IAniListService
 
     public async Task<(int? AniListId, string? CoverImageUrl)> SearchAnimeAsync(string title)
     {
-        var cacheKey = $"anime_search_{title.ToLowerInvariant().Trim()}";
+        // Strip trailing parenthetical content (e.g. "Title (English Name)") for better AniList search compatibility
+        var cleanedTitle = Regex.Replace(title.Trim(), @"\s*\([^)]*\)\s*$", "").Trim();
+        if (string.IsNullOrEmpty(cleanedTitle))
+            cleanedTitle = title.Trim();
+
+        var cacheKey = $"anime_search_{cleanedTitle.ToLowerInvariant()}";
         if (_cache.TryGetValue(cacheKey, out (int?, string?) cachedSearch))
             return cachedSearch;
 
+        var result = await QueryAniListAsync(cleanedTitle);
+
+        // If cleaned title failed and it differed from original, try the original as fallback
+        if (result == (null, null) && !string.Equals(cleanedTitle, title.Trim(), StringComparison.OrdinalIgnoreCase))
+        {
+            _logger.LogDebug("AniList search failed for cleaned title '{CleanedTitle}', retrying with original '{Title}'", cleanedTitle, title);
+            result = await QueryAniListAsync(title.Trim());
+        }
+
+        if (result != (null, null))
+            _cache.Set(cacheKey, result, TimeSpan.FromHours(24));
+        else
+            _logger.LogWarning("AniList search returned no result for title '{Title}'", title);
+
+        return result;
+    }
+
+    private async Task<(int? AniListId, string? CoverImageUrl)> QueryAniListAsync(string searchTitle)
+    {
         var query = @"
             query($search: String) {
                 Media(search: $search, type: ANIME) {
@@ -189,7 +214,7 @@ public class AniListService : IAniListService
             }
         ";
 
-        var requestBody = new { query, variables = new { search = title } };
+        var requestBody = new { query, variables = new { search = searchTitle } };
         var content = new StringContent(
             JsonSerializer.Serialize(requestBody),
             System.Text.Encoding.UTF8,
@@ -202,12 +227,15 @@ public class AniListService : IAniListService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error searching AniList for title {Title}", title);
+            _logger.LogError(ex, "Error searching AniList for title '{Title}'", searchTitle);
             return (null, null);
         }
 
         if (!response.IsSuccessStatusCode)
+        {
+            _logger.LogDebug("AniList search for '{Title}' returned HTTP {StatusCode}", searchTitle, response.StatusCode);
             return (null, null);
+        }
 
         var responseContent = await response.Content.ReadAsStringAsync();
         var jsonDoc = JsonDocument.Parse(responseContent);
@@ -229,9 +257,7 @@ public class AniListService : IAniListService
                 coverImage.TryGetProperty("large", out var large))
                 coverUrl = large.GetString();
 
-            var result = (id, coverUrl);
-            _cache.Set(cacheKey, result, TimeSpan.FromHours(24));
-            return result;
+            return (id, coverUrl);
         }
 
         return (null, null);
