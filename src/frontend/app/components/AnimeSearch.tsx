@@ -145,37 +145,56 @@ export default function AnimeSearch() {
     scrollMargin,
   });
 
+  const isCompact = loading || submitted || !!error;
+
   return (
-    <div className="flex min-h-screen bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex w-full flex-col items-center justify-start gap-8 px-6 py-12 bg-white dark:bg-black md:justify-center md:py-32">
-        <h1 className="text-3xl font-semibold tracking-tight text-black dark:text-zinc-50">
+    <div className="flex min-h-screen flex-col bg-white font-sans dark:bg-black">
+      <header className={
+        isCompact
+          ? "sticky top-0 z-10 bg-white dark:bg-black border-b border-zinc-200 dark:border-zinc-800 px-6 py-3 flex items-center gap-4 shadow-sm"
+          : "flex flex-1 flex-col items-center justify-center gap-8 px-6 py-12"
+      }>
+        <h1 className={
+          isCompact
+            ? "text-lg font-semibold tracking-tight text-black dark:text-zinc-50 whitespace-nowrap shrink-0"
+            : "text-3xl font-semibold tracking-tight text-black dark:text-zinc-50"
+        }>
           AniList Show Finder
         </h1>
 
-        <form onSubmit={handleSubmit} className="w-full max-w-md flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            <label htmlFor="username" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              AniList Username
-            </label>
-            <input
-              id="username"
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Enter your AniList username"
-              className="rounded-lg border border-zinc-300 bg-zinc-50 px-4 py-2 text-zinc-900 placeholder-zinc-500 focus:border-zinc-600 focus:outline-none dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-50 dark:placeholder-zinc-400 dark:focus:border-zinc-400"
-              disabled={loading}
-            />
-          </div>
-
+        <form onSubmit={handleSubmit} className={
+          isCompact
+            ? "flex items-center gap-2 flex-1 max-w-lg"
+            : "w-full max-w-md flex flex-col gap-4"
+        }>
+          {!isCompact && (
+            <div className="flex flex-col gap-2">
+              <label htmlFor="username" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                AniList Username
+              </label>
+            </div>
+          )}
+          <input
+            id="username"
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            placeholder="Enter your AniList username"
+            className={`rounded-lg border border-zinc-300 bg-zinc-50 px-4 text-zinc-900 placeholder-zinc-500 focus:border-zinc-600 focus:outline-none dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-50 dark:placeholder-zinc-400 dark:focus:border-zinc-400 ${isCompact ? "flex-1 py-1.5" : "py-2"}`}
+            disabled={loading}
+          />
           <button
             type="submit"
             disabled={loading || !username.trim()}
-            className="rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-blue-500 dark:hover:bg-blue-600"
+            className={`rounded-lg bg-blue-600 font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-blue-500 dark:hover:bg-blue-600 ${isCompact ? "px-4 py-1.5 whitespace-nowrap" : "px-4 py-2"}`}
           >
             {loading ? "Loading..." : "Find Completed Shows"}
           </button>
         </form>
+      </header>
+
+      {isCompact && (
+      <main className="flex w-full flex-col items-center gap-8 px-6 py-8 bg-white dark:bg-black">
 
         {error && (
           <div className="w-full max-w-md rounded-lg border border-red-300 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950">
@@ -365,6 +384,7 @@ export default function AnimeSearch() {
         )}
 
       </main>
+      )}
     </div>
   );
 }
