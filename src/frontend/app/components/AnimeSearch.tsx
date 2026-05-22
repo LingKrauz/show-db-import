@@ -22,6 +22,8 @@ interface AnimeResponse {
 interface Recommendation {
   title: string;
   reason: string;
+  aniListId: number | null;
+  coverImageUrl: string | null;
 }
 
 interface RecommendationResponse {
@@ -254,12 +256,30 @@ export default function AnimeSearch() {
                 {recommendations.map((rec, index) => (
                   <div
                     key={index}
-                    className="rounded-lg border border-purple-200 bg-purple-50 p-4 dark:border-purple-800 dark:bg-purple-950"
+                    onClick={() => handleOpenAniList(rec.aniListId)}
+                    className={`rounded-lg border border-purple-200 bg-purple-50 overflow-hidden dark:border-purple-800 dark:bg-purple-950 hover:shadow-md transition-shadow ${rec.aniListId ? "cursor-pointer" : ""}`}
                   >
-                    <h3 className="font-semibold text-zinc-900 dark:text-zinc-50 mb-2">
-                      {rec.title}
-                    </h3>
-                    <p className="text-sm text-zinc-600 dark:text-zinc-400">{rec.reason}</p>
+                    {rec.coverImageUrl ? (
+                      <Image
+                        src={rec.coverImageUrl}
+                        alt={rec.title}
+                        width={225}
+                        height={320}
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
+                        className="w-full h-40 object-cover"
+                        placeholder="empty"
+                      />
+                    ) : (
+                      <div className="w-full h-40 bg-purple-100 dark:bg-purple-900 flex items-center justify-center">
+                        <span className="text-purple-400 dark:text-purple-500 text-sm">No image</span>
+                      </div>
+                    )}
+                    <div className="p-4">
+                      <h3 className="font-semibold text-zinc-900 dark:text-zinc-50 line-clamp-2 mb-2">
+                        {rec.title}
+                      </h3>
+                      <p className="text-sm text-zinc-600 dark:text-zinc-400">{rec.reason}</p>
+                    </div>
                   </div>
                 ))}
               </div>

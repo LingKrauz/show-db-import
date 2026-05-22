@@ -5,7 +5,7 @@ using System.Text.Json;
 
 namespace backend.Services;
 
-public record Recommendation(string Title, string Reason);
+public record Recommendation(string Title, string Reason, int? AniListId = null, string? CoverImageUrl = null);
 
 public interface IRecommendationService
 {

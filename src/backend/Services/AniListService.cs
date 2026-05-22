@@ -18,6 +18,7 @@ public class AniListResult
 public interface IAniListService
 {
     Task<AniListResult> GetCompletedShowsAsync(string username);
+    Task<(int? AniListId, string? CoverImageUrl)> SearchAnimeAsync(string title);
 }
 
 public class AniListService : IAniListService
@@ -169,5 +170,70 @@ public class AniListService : IAniListService
         var animeResponse = new AnimeResponse(shows);
         _cache.Set(cacheKey, animeResponse, TimeSpan.FromMinutes(5));
         return AniListResult.Success(animeResponse);
+    }
+
+    public async Task<(int? AniListId, string? CoverImageUrl)> SearchAnimeAsync(string title)
+    {
+        var cacheKey = $"anime_search_{title.ToLowerInvariant().Trim()}";
+        if (_cache.TryGetValue(cacheKey, out (int?, string?) cachedSearch))
+            return cachedSearch;
+
+        var query = @"
+            query($search: String) {
+                Media(search: $search, type: ANIME) {
+                    id
+                    coverImage {
+                        large
+                    }
+                }
+            }
+        ";
+
+        var requestBody = new { query, variables = new { search = title } };
+        var content = new StringContent(
+            JsonSerializer.Serialize(requestBody),
+            System.Text.Encoding.UTF8,
+            "application/json");
+
+        HttpResponseMessage response;
+        try
+        {
+            response = await _httpClient.PostAsync("https://graphql.anilist.co", content);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error searching AniList for title {Title}", title);
+            return (null, null);
+        }
+
+        if (!response.IsSuccessStatusCode)
+            return (null, null);
+
+        var responseContent = await response.Content.ReadAsStringAsync();
+        var jsonDoc = JsonDocument.Parse(responseContent);
+
+        if (jsonDoc.RootElement.TryGetProperty("errors", out _))
+            return (null, null);
+
+        if (jsonDoc.RootElement.TryGetProperty("data", out var data) &&
+            data.TryGetProperty("Media", out var media) &&
+            media.ValueKind != JsonValueKind.Null)
+        {
+            int? id = null;
+            string? coverUrl = null;
+
+            if (media.TryGetProperty("id", out var idEl) && idEl.TryGetInt32(out int idVal))
+                id = idVal;
+
+            if (media.TryGetProperty("coverImage", out var coverImage) &&
+                coverImage.TryGetProperty("large", out var large))
+                coverUrl = large.GetString();
+
+            var result = (id, coverUrl);
+            _cache.Set(cacheKey, result, TimeSpan.FromHours(24));
+            return result;
+        }
+
+        return (null, null);
     }
 }
