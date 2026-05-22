@@ -197,7 +197,7 @@ export default function AnimeSearch() {
           <div className="w-full max-w-6xl">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-xl font-semibold text-black dark:text-zinc-50">
-                AI Recommendations
+                Based on what you like, you may enjoy:
               </h2>
               {!recFetched && (
                 <button
@@ -252,7 +252,7 @@ export default function AnimeSearch() {
           <div className="w-full max-w-6xl">
             <div className="mb-4 flex justify-between items-center gap-4 flex-wrap">
               <h2 className="text-xl font-semibold text-black dark:text-zinc-50">
-                Completed Shows ({shows.length})
+                Your Shows ({shows.length})
               </h2>
               <div className="flex items-center gap-3">
                 <div className="flex gap-2 border border-zinc-300 rounded-lg p-1 dark:border-zinc-600">
