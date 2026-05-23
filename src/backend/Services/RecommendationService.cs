@@ -38,10 +38,15 @@ public class RecommendationService : IRecommendationService
         var topStr = string.Join(", ", top.Select(FormatShow));
         var bottomStr = string.Join(", ", bottom.Select(FormatShow));
 
+        var allTitlesStr = string.Join(", ", shows.Select(s => s.Title));
+
         var userMessage = $$"""
             Based on these anime I've completed:
             Top rated: {{topStr}}
             Lowest rated: {{bottomStr}}
+
+            I have ALREADY watched ALL of the following anime — do NOT recommend any of them:
+            {{allTitlesStr}}
 
             Recommend 8 anime I have NOT already watched. Return ONLY a valid JSON array in this format:
             [{"title": "...", "reason": "..."}]
