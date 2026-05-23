@@ -49,10 +49,20 @@ public class RecommendationsController : ControllerBase
         {
             var recommendations = await _recommendationService.GetRecommendationsAsync(shows);
 
+            var watchedIds = shows
+                .Where(s => s.AniListId.HasValue)
+                .Select(s => s.AniListId!.Value)
+                .ToHashSet();
+
             var enrichedList = new List<Recommendation>();
             foreach (var rec in recommendations)
             {
                 var (aniListId, coverImageUrl) = await _aniListService.SearchAnimeAsync(rec.Title);
+                if (aniListId.HasValue && watchedIds.Contains(aniListId.Value))
+                {
+                    _logger.LogWarning("Filtered out already-watched recommendation: {Title} (AniListId: {Id})", rec.Title, aniListId);
+                    continue;
+                }
                 enrichedList.Add(rec with { AniListId = aniListId, CoverImageUrl = coverImageUrl });
             }
 
