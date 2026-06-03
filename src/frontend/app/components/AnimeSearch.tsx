@@ -153,12 +153,12 @@ export default function AnimeSearch() {
     <div className="flex min-h-screen flex-col bg-white font-sans dark:bg-black">
       <header className={
         isCompact
-          ? "sticky top-0 z-10 bg-white dark:bg-black border-b border-zinc-200 dark:border-zinc-800 px-6 py-3 flex items-center gap-4 shadow-sm"
-          : "flex flex-1 flex-col items-center justify-center gap-8 px-6 py-12"
+          ? "sticky top-0 z-10 bg-white dark:bg-black border-b border-zinc-200 dark:border-zinc-800 px-4 py-3 shadow-sm sm:px-6"
+          : "flex flex-1 flex-col items-center justify-center gap-8 px-4 py-12 sm:px-6"
       }>
         <h1 className={
           isCompact
-            ? "text-lg font-semibold tracking-tight text-black dark:text-zinc-50 whitespace-nowrap shrink-0"
+            ? "text-lg font-semibold tracking-tight text-black dark:text-zinc-50 shrink-0 sm:text-xl"
             : "text-3xl font-semibold tracking-tight text-black dark:text-zinc-50"
         }>
           AniList Show Finder
@@ -166,7 +166,7 @@ export default function AnimeSearch() {
 
         <form onSubmit={handleSubmit} className={
           isCompact
-            ? "flex items-center gap-2 flex-1 max-w-lg"
+            ? "flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:gap-2 sm:flex-1 sm:max-w-lg"
             : "w-full max-w-md flex flex-col gap-4"
         }>
           {!isCompact && (
@@ -182,21 +182,24 @@ export default function AnimeSearch() {
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             placeholder="Enter your AniList username"
-            className={`rounded-lg border border-zinc-300 bg-zinc-50 px-4 text-zinc-900 placeholder-zinc-500 focus:border-zinc-600 focus:outline-none dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-50 dark:placeholder-zinc-400 dark:focus:border-zinc-400 ${isCompact ? "flex-1 py-1.5" : "py-2"}`}
+            className={`w-full min-w-0 rounded-lg border border-zinc-300 bg-zinc-50 px-4 text-zinc-900 placeholder-zinc-500 focus:border-zinc-600 focus:outline-none dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-50 dark:placeholder-zinc-400 dark:focus:border-zinc-400 ${isCompact ? "py-1.5 sm:flex-1" : "py-2"}`}
             disabled={loading}
           />
           <button
             type="submit"
             disabled={loading || !username.trim()}
-            className={`rounded-lg bg-blue-600 font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-blue-500 dark:hover:bg-blue-600 ${isCompact ? "px-4 py-1.5 whitespace-nowrap" : "px-4 py-2"}`}
+            className={`w-full rounded-lg bg-blue-600 font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-blue-500 dark:hover:bg-blue-600 sm:w-auto ${isCompact ? "px-4 py-1.5 whitespace-nowrap" : "px-4 py-2"}`}
           >
-            {loading ? "Loading..." : "Find Completed Shows"}
+            {loading ? "Loading..." : <>
+              <span className="sm:hidden">Find</span>
+              <span className="hidden sm:inline">Find Completed Shows</span>
+            </>}
           </button>
         </form>
       </header>
 
       {isCompact && (
-      <main className="flex w-full flex-col items-center gap-8 px-6 py-8 bg-white dark:bg-black">
+      <main className="flex w-full flex-col items-center gap-8 px-4 py-8 bg-white dark:bg-black sm:px-6">
 
         {error && (
           <div className="w-full max-w-md rounded-lg border border-red-300 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950">
