@@ -83,3 +83,6 @@ CLAUDE.md
 *.tmp
 *.swp
 *.swo
+
+# Playwright session artifacts
+.playwright-mcp/
