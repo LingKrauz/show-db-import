@@ -153,8 +153,8 @@ export default function AnimeSearch() {
     <div className="flex min-h-screen flex-col bg-white font-sans dark:bg-black">
       <header className={
         isCompact
-          ? "sticky top-0 z-10 bg-white dark:bg-black border-b border-zinc-200 dark:border-zinc-800 px-4 sm:px-6 py-3 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4 shadow-sm"
-          : "flex flex-1 flex-col items-center justify-center gap-8 px-4 sm:px-6 py-12"
+          ? "sticky top-0 z-10 bg-white dark:bg-black border-b border-zinc-200 dark:border-zinc-800 px-6 py-3 flex items-center gap-4 shadow-sm"
+          : "flex flex-1 flex-col items-center justify-center gap-8 px-6 py-12"
       }>
         <h1 className={
           isCompact
@@ -166,7 +166,7 @@ export default function AnimeSearch() {
 
         <form onSubmit={handleSubmit} className={
           isCompact
-            ? "flex items-center gap-2 w-full sm:flex-1 sm:max-w-lg"
+            ? "flex items-center gap-2 flex-1 max-w-lg"
             : "w-full max-w-md flex flex-col gap-4"
         }>
           {!isCompact && (
@@ -196,7 +196,7 @@ export default function AnimeSearch() {
       </header>
 
       {isCompact && (
-      <main className="flex w-full flex-col items-center gap-8 px-4 sm:px-6 py-8 bg-white dark:bg-black">
+      <main className="flex w-full flex-col items-center gap-8 px-6 py-8 bg-white dark:bg-black">
 
         {error && (
           <div className="w-full max-w-md rounded-lg border border-red-300 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950">
@@ -216,7 +216,7 @@ export default function AnimeSearch() {
 
         {shows.length > 0 && (
           <div className="w-full max-w-6xl">
-            <div className="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="mb-4 flex items-center justify-between">
               <h2 className="text-xl font-semibold text-black dark:text-zinc-50">
                 Based on what you like, you may enjoy:
               </h2>
@@ -289,7 +289,7 @@ export default function AnimeSearch() {
 
         {shows.length > 0 && (
           <div className="w-full max-w-6xl">
-            <div className="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <div className="mb-4 flex justify-between items-center gap-4 flex-wrap">
               <h2 className="text-xl font-semibold text-black dark:text-zinc-50">
                 Your Shows ({shows.length})
               </h2>
