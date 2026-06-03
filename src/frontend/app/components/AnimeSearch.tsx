@@ -291,13 +291,13 @@ export default function AnimeSearch() {
         )}
 
         {shows.length > 0 && (
-          <div className="w-full max-w-6xl">
-            <div className="mb-4 flex justify-between items-center gap-4 flex-wrap">
+          <div className="w-full max-w-6xl overflow-x-hidden">
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <h2 className="text-xl font-semibold text-black dark:text-zinc-50">
                 Your Shows ({shows.length})
               </h2>
-              <div className="flex items-center gap-3">
-                <div className="flex gap-2 border border-zinc-300 rounded-lg p-1 dark:border-zinc-600">
+              <div className="w-full flex flex-wrap items-center justify-end gap-3 sm:w-auto">
+                <div className="flex flex-wrap gap-2 rounded-lg border border-zinc-300 p-1 dark:border-zinc-600">
                   <button
                     onClick={() => setViewMode("list")}
                     className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
@@ -322,7 +322,7 @@ export default function AnimeSearch() {
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as SortOption)}
-                  className="rounded-lg border border-zinc-300 bg-white px-3 py-1 text-sm text-zinc-900 focus:border-zinc-600 focus:outline-none dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-50 dark:focus:border-zinc-400"
+                  className="w-full min-w-0 rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-900 focus:border-zinc-600 focus:outline-none dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-50 dark:focus:border-zinc-400 sm:w-auto sm:min-w-[12rem]"
                 >
                   <option value="title-asc">Sort: Title (A-Z)</option>
                   <option value="title-desc">Sort: Title (Z-A)</option>
