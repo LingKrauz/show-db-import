@@ -150,263 +150,286 @@ export default function AnimeSearch() {
   const isCompact = loading || submitted || !!error;
 
   return (
-    <div className="flex min-h-screen flex-col bg-white font-sans dark:bg-black">
-      <header className={
-        isCompact
-          ? "sticky top-0 z-10 bg-white dark:bg-black border-b border-zinc-200 dark:border-zinc-800 px-4 py-3 shadow-sm sm:px-6"
-          : "flex flex-1 flex-col items-center justify-center gap-8 px-4 py-12 sm:px-6"
-      }>
-        <h1 className={
-          isCompact
-            ? "text-lg font-semibold tracking-tight text-black dark:text-zinc-50 shrink-0 sm:text-xl"
-            : "text-3xl font-semibold tracking-tight text-black dark:text-zinc-50"
-        }>
-          AniList Show Finder
-        </h1>
-
-        <form onSubmit={handleSubmit} className={
-          isCompact
-            ? "flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:gap-2 sm:flex-1 sm:max-w-lg"
-            : "w-full max-w-md flex flex-col gap-4"
-        }>
-          {!isCompact && (
+    <div className="flex min-h-screen flex-col bg-[#07091a] font-sans">
+      {isCompact ? (
+        <header className="sticky top-0 z-10 bg-[#0e1230]/80 backdrop-blur-md border-b border-purple-900/30 px-4 py-3 shadow-lg sm:px-6">
+          <div className="flex w-full items-center gap-3">
+            <h1 className="shrink-0 text-lg font-bold tracking-tight sm:text-xl">
+              <span className="bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+                AniList Finder
+              </span>
+            </h1>
+            <form onSubmit={handleSubmit} className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:gap-2 sm:max-w-lg">
+              <input
+                id="username"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Enter your AniList username"
+                className="w-full min-w-0 rounded-full border border-purple-800/50 bg-[#0a0f2e] px-4 py-1.5 text-[#f1f5f9] placeholder-[#64748b] focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500/30 sm:flex-1 transition-colors"
+                disabled={loading}
+              />
+              <button
+                type="submit"
+                disabled={loading || !username.trim()}
+                className="w-full rounded-full bg-gradient-to-r from-purple-600 to-blue-500 px-4 py-1.5 font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed sm:w-auto whitespace-nowrap"
+              >
+                {loading ? "Loading..." : (
+                  <>
+                    <span className="sm:hidden">Find</span>
+                    <span className="hidden sm:inline">Find Shows</span>
+                  </>
+                )}
+              </button>
+            </form>
+          </div>
+        </header>
+      ) : (
+        <header className="flex flex-1 flex-col items-center justify-center gap-10 px-4 py-20 sm:px-6">
+          <div className="flex flex-col items-center gap-5 text-center max-w-2xl">
+            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
+              <span className="bg-gradient-to-r from-purple-400 via-purple-300 to-blue-400 bg-clip-text text-transparent">
+                Find What to Watch Next,
+              </span>
+              <br />
+              <span className="text-[#f1f5f9]">Intelligently.</span>
+            </h1>
+            <p className="text-[#94a3b8] text-lg leading-relaxed max-w-md">
+              Enter your AniList username to browse your completed anime and get AI-powered recommendations tailored to your taste.
+            </p>
+          </div>
+          <form onSubmit={handleSubmit} className="w-full max-w-md flex flex-col gap-4">
             <div className="flex flex-col gap-2">
-              <label htmlFor="username" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              <label htmlFor="username" className="text-sm font-medium text-[#94a3b8]">
                 AniList Username
               </label>
+              <input
+                id="username"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="e.g. username123"
+                className="w-full rounded-xl border border-purple-800/50 bg-[#0e1230] px-4 py-3 text-[#f1f5f9] placeholder-[#475569] focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-colors"
+                disabled={loading}
+              />
             </div>
-          )}
-          <input
-            id="username"
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            placeholder="Enter your AniList username"
-            className={`w-full min-w-0 rounded-lg border border-zinc-300 bg-zinc-50 px-4 text-zinc-900 placeholder-zinc-500 focus:border-zinc-600 focus:outline-none dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-50 dark:placeholder-zinc-400 dark:focus:border-zinc-400 ${isCompact ? "py-1.5 sm:flex-1" : "py-2"}`}
-            disabled={loading}
-          />
-          <button
-            type="submit"
-            disabled={loading || !username.trim()}
-            className={`w-full rounded-lg bg-blue-600 font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-blue-500 dark:hover:bg-blue-600 sm:w-auto ${isCompact ? "px-4 py-1.5 whitespace-nowrap" : "px-4 py-2"}`}
-          >
-            {loading ? "Loading..." : <>
-              <span className="sm:hidden">Find</span>
-              <span className="hidden sm:inline">Find Completed Shows</span>
-            </>}
-          </button>
-        </form>
-      </header>
+            <button
+              type="submit"
+              disabled={loading || !username.trim()}
+              className="w-full rounded-xl bg-gradient-to-r from-purple-600 to-blue-500 px-6 py-3 font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {loading ? "Loading..." : "Find Completed Shows"}
+            </button>
+          </form>
+        </header>
+      )}
 
       {isCompact && (
-      <main className="flex w-full flex-col items-center gap-8 px-4 py-8 bg-white dark:bg-black sm:px-6">
+        <main className="flex w-full flex-col items-center gap-10 px-4 py-10 sm:px-6">
 
-        {error && (
-          <div className="w-full max-w-md rounded-lg border border-red-300 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950">
-            <p className="text-red-800 dark:text-red-200">
-              Error: {error}
-            </p>
-          </div>
-        )}
+          {error && (
+            <div className="w-full max-w-md rounded-xl border border-red-900/40 bg-red-950/30 p-4">
+              <p className="text-red-300">Error: {error}</p>
+            </div>
+          )}
 
-        {submitted && shows.length === 0 && !error && (
-          <div className="w-full max-w-md rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950">
-            <p className="text-amber-800 dark:text-amber-200">
-              No completed shows found for this user.
-            </p>
-          </div>
-        )}
+          {submitted && shows.length === 0 && !error && (
+            <div className="w-full max-w-md rounded-xl border border-amber-900/40 bg-amber-950/20 p-4">
+              <p className="text-amber-300">No completed shows found for this user.</p>
+            </div>
+          )}
 
-        {shows.length > 0 && (
-          <div className="w-full max-w-6xl">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-black dark:text-zinc-50">
-                Based on what you like, you may enjoy:
-              </h2>
-              {!recFetched && (
-                <button
-                  onClick={handleGetRecommendations}
-                  disabled={recLoading}
-                  className="rounded-lg bg-purple-600 px-4 py-2 font-medium text-white transition-colors hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-purple-500 dark:hover:bg-purple-600"
-                >
-                  {recLoading ? "Thinking..." : "Get AI Recommendations"}
-                </button>
+          {shows.length > 0 && (
+            <div className="w-full max-w-6xl">
+              <div className="mb-6 flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-[#f1f5f9]">
+                  Based on what you like, you may enjoy:
+                </h2>
+                {!recFetched && (
+                  <button
+                    onClick={handleGetRecommendations}
+                    disabled={recLoading}
+                    className="rounded-full bg-gradient-to-r from-purple-600 to-blue-500 px-5 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {recLoading ? "Thinking..." : "Get AI Recommendations"}
+                  </button>
+                )}
+              </div>
+
+              {recError && (
+                <div className="rounded-xl border border-red-900/40 bg-red-950/30 p-4 mb-4">
+                  <p className="text-red-300">Error: {recError}</p>
+                </div>
+              )}
+
+              {recLoading && (
+                <div className="flex items-center gap-3 text-[#94a3b8]">
+                  <svg className="animate-spin h-5 w-5 text-purple-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  <span>Analyzing your watch history...</span>
+                </div>
+              )}
+
+              {recFetched && recommendations.length === 0 && !recError && (
+                <p className="text-[#64748b]">No recommendations returned.</p>
+              )}
+
+              {recommendations.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {recommendations.map((rec, index) => (
+                    <div
+                      key={index}
+                      onClick={() => handleOpenAniList(rec.aniListId)}
+                      className={`relative rounded-xl border border-purple-800/40 bg-[#130d2a] overflow-hidden transition-all hover:border-purple-500/60 hover:shadow-[0_0_20px_rgba(124,58,237,0.15)] ${rec.aniListId ? "cursor-pointer" : ""}`}
+                    >
+                      <span className="absolute top-2 right-2 z-10 rounded-full bg-gradient-to-r from-purple-600 to-blue-500 px-2 py-0.5 text-xs font-semibold text-white">
+                        AI
+                      </span>
+                      {rec.coverImageUrl ? (
+                        <Image
+                          src={rec.coverImageUrl}
+                          alt={rec.title}
+                          width={225}
+                          height={320}
+                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
+                          className="w-full h-40 object-cover"
+                          placeholder="empty"
+                        />
+                      ) : (
+                        <div className="w-full h-40 bg-purple-950/50 flex items-center justify-center">
+                          <span className="text-purple-500/60 text-sm">No image</span>
+                        </div>
+                      )}
+                      <div className="p-4">
+                        <h3 className="font-semibold text-[#f1f5f9] line-clamp-2 mb-2">
+                          {rec.title}
+                        </h3>
+                        <p className="text-sm text-[#94a3b8]">{rec.reason}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
+          )}
 
-            {recError && (
-              <div className="rounded-lg border border-red-300 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950">
-                <p className="text-red-800 dark:text-red-200">Error: {recError}</p>
-              </div>
-            )}
-
-            {recLoading && (
-              <div className="flex items-center gap-3 text-zinc-500 dark:text-zinc-400">
-                <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                <span>Analyzing your watch history...</span>
-              </div>
-            )}
-
-            {recFetched && recommendations.length === 0 && !recError && (
-              <p className="text-zinc-500 dark:text-zinc-400">No recommendations returned.</p>
-            )}
-
-            {recommendations.length > 0 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {recommendations.map((rec, index) => (
-                  <div
-                    key={index}
-                    onClick={() => handleOpenAniList(rec.aniListId)}
-                    className={`rounded-lg border border-purple-200 bg-purple-50 overflow-hidden dark:border-purple-800 dark:bg-purple-950 hover:shadow-md transition-shadow ${rec.aniListId ? "cursor-pointer" : ""}`}
-                  >
-                    {rec.coverImageUrl ? (
-                      <Image
-                        src={rec.coverImageUrl}
-                        alt={rec.title}
-                        width={225}
-                        height={320}
-                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
-                        className="w-full h-40 object-cover"
-                        placeholder="empty"
-                      />
-                    ) : (
-                      <div className="w-full h-40 bg-purple-100 dark:bg-purple-900 flex items-center justify-center">
-                        <span className="text-purple-400 dark:text-purple-500 text-sm">No image</span>
-                      </div>
-                    )}
-                    <div className="p-4">
-                      <h3 className="font-semibold text-zinc-900 dark:text-zinc-50 line-clamp-2 mb-2">
-                        {rec.title}
-                      </h3>
-                      <p className="text-sm text-zinc-600 dark:text-zinc-400">{rec.reason}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {shows.length > 0 && (
-          <div className="w-full max-w-6xl overflow-x-hidden">
-            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <h2 className="text-xl font-semibold text-black dark:text-zinc-50">
-                Your Shows ({shows.length})
-              </h2>
-              <div className="w-full flex flex-wrap items-center justify-end gap-3 sm:w-auto">
-                <div className="flex flex-wrap gap-2 rounded-lg border border-zinc-300 p-1 dark:border-zinc-600">
-                  <button
-                    onClick={() => setViewMode("list")}
-                    className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-                      viewMode === "list"
-                        ? "bg-blue-600 text-white dark:bg-blue-500"
-                        : "text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
-                    }`}
-                  >
-                    List
-                  </button>
-                  <button
-                    onClick={() => setViewMode("grid")}
-                    className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-                      viewMode === "grid"
-                        ? "bg-blue-600 text-white dark:bg-blue-500"
-                        : "text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
-                    }`}
-                  >
-                    Grid
-                  </button>
-                </div>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as SortOption)}
-                  className="w-full min-w-0 rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-900 focus:border-zinc-600 focus:outline-none dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-50 dark:focus:border-zinc-400 sm:w-auto sm:min-w-[12rem]"
-                >
-                  <option value="title-asc">Sort: Title (A-Z)</option>
-                  <option value="title-desc">Sort: Title (Z-A)</option>
-                  <option value="score-asc">Sort: Score (Low to High)</option>
-                  <option value="score-desc">Sort: Score (High to Low)</option>
-                </select>
-              </div>
-            </div>
-
-            {viewMode === "list" ? (
-              <ol
-                ref={listRef}
-                className="relative list-decimal list-inside"
-                style={{ height: `${listVirtualizer.getTotalSize()}px` }}
-              >
-                {listVirtualizer.getVirtualItems().map((virtualItem) => {
-                  const show = sortedShows[virtualItem.index];
-                  return (
-                    <li
-                      key={virtualItem.index}
-                      className="absolute w-full text-zinc-700 dark:text-zinc-300 break-words flex justify-between items-start"
-                      style={{
-                        height: `${virtualItem.size}px`,
-                        transform: `translateY(${virtualItem.start - listVirtualizer.options.scrollMargin}px)`,
-                      }}
+          {shows.length > 0 && (
+            <div className="w-full max-w-6xl overflow-x-hidden">
+              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <h2 className="text-xl font-semibold text-[#f1f5f9]">
+                  Your Shows ({shows.length})
+                </h2>
+                <div className="w-full flex flex-wrap items-center justify-end gap-3 sm:w-auto">
+                  <div className="flex flex-wrap gap-1 rounded-xl border border-purple-900/40 bg-[#0e1230] p-1">
+                    <button
+                      onClick={() => setViewMode("list")}
+                      className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                        viewMode === "list"
+                          ? "bg-gradient-to-r from-purple-600 to-blue-500 text-white"
+                          : "text-[#94a3b8] hover:text-[#f1f5f9] hover:bg-purple-900/20"
+                      }`}
                     >
-                      <span className="flex-1">{show.title}</span>
-                      {show.score && (
-                        <span className="ml-4 font-semibold text-blue-600 dark:text-blue-400 whitespace-nowrap">
-                          {getScoreDisplay(show.score, show.scoreFormat)}
-                        </span>
-                      )}
-                    </li>
-                  );
-                })}
-              </ol>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {sortedShows.map((show, index) => (
-                  <div
-                    key={index}
-                    onClick={() => handleOpenAniList(show.aniListId)}
-                    className={`rounded-lg border border-zinc-200 bg-zinc-50 overflow-hidden dark:border-zinc-700 dark:bg-zinc-900 hover:shadow-md transition-shadow ${show.aniListId ? "cursor-pointer" : ""}`}
+                      List
+                    </button>
+                    <button
+                      onClick={() => setViewMode("grid")}
+                      className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                        viewMode === "grid"
+                          ? "bg-gradient-to-r from-purple-600 to-blue-500 text-white"
+                          : "text-[#94a3b8] hover:text-[#f1f5f9] hover:bg-purple-900/20"
+                      }`}
+                    >
+                      Grid
+                    </button>
+                  </div>
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as SortOption)}
+                    className="w-full min-w-0 rounded-xl border border-purple-900/40 bg-[#0e1230] px-3 py-1.5 text-sm text-[#f1f5f9] focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500/30 sm:w-auto sm:min-w-[12rem]"
                   >
-                    {show.coverImageUrl ? (
-                      <Image
-                        src={show.coverImageUrl}
-                        alt={show.title}
-                        width={225}
-                        height={320}
-                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
-                        className="w-full h-40 object-cover"
-                        placeholder="empty"
-                      />
-                    ) : (
-                      <div className="w-full h-40 bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center">
-                        <span className="text-zinc-500 dark:text-zinc-500 text-sm">No image</span>
-                      </div>
-                    )}
-                    <div className="p-4">
-                      <h3 className="font-semibold text-zinc-900 dark:text-zinc-50 line-clamp-2 mb-3">
-                        {show.title}
-                      </h3>
-                      {show.score && (
-                        <div className="text-sm text-zinc-600 dark:text-zinc-400">
-                          Score: <span className="font-semibold text-blue-600 dark:text-blue-400">
+                    <option value="title-asc">Sort: Title (A-Z)</option>
+                    <option value="title-desc">Sort: Title (Z-A)</option>
+                    <option value="score-asc">Sort: Score (Low to High)</option>
+                    <option value="score-desc">Sort: Score (High to Low)</option>
+                  </select>
+                </div>
+              </div>
+
+              {viewMode === "list" ? (
+                <ol
+                  ref={listRef}
+                  className="relative list-decimal list-inside"
+                  style={{ height: `${listVirtualizer.getTotalSize()}px` }}
+                >
+                  {listVirtualizer.getVirtualItems().map((virtualItem) => {
+                    const show = sortedShows[virtualItem.index];
+                    return (
+                      <li
+                        key={virtualItem.index}
+                        className="absolute w-full text-[#94a3b8] break-words flex justify-between items-start"
+                        style={{
+                          height: `${virtualItem.size}px`,
+                          transform: `translateY(${virtualItem.start - listVirtualizer.options.scrollMargin}px)`,
+                        }}
+                      >
+                        <span className="flex-1">{show.title}</span>
+                        {show.score && (
+                          <span className="ml-4 font-semibold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent whitespace-nowrap">
                             {getScoreDisplay(show.score, show.scoreFormat)}
                           </span>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ol>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {sortedShows.map((show, index) => (
+                    <div
+                      key={index}
+                      onClick={() => handleOpenAniList(show.aniListId)}
+                      className={`rounded-xl border border-purple-900/30 bg-[#0e1230] overflow-hidden transition-all hover:border-purple-500/50 hover:shadow-[0_0_20px_rgba(124,58,237,0.12)] ${show.aniListId ? "cursor-pointer" : ""}`}
+                    >
+                      {show.coverImageUrl ? (
+                        <Image
+                          src={show.coverImageUrl}
+                          alt={show.title}
+                          width={225}
+                          height={320}
+                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
+                          className="w-full h-40 object-cover"
+                          placeholder="empty"
+                        />
+                      ) : (
+                        <div className="w-full h-40 bg-[#0a0f2e] flex items-center justify-center">
+                          <span className="text-[#475569] text-sm">No image</span>
                         </div>
                       )}
-                      {!show.score && (
-                        <div className="text-sm text-zinc-500 dark:text-zinc-500">
-                          No score
-                        </div>
-                      )}
+                      <div className="p-4">
+                        <h3 className="font-semibold text-[#f1f5f9] line-clamp-2 mb-3">
+                          {show.title}
+                        </h3>
+                        {show.score ? (
+                          <div className="text-sm text-[#94a3b8]">
+                            Score:{" "}
+                            <span className="font-semibold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+                              {getScoreDisplay(show.score, show.scoreFormat)}
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="text-sm text-[#475569]">No score</div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
-      </main>
+        </main>
       )}
     </div>
   );
