@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "AniList Show Finder",
-  description: "Find and import your anime shows from AniList",
+  description: "Browse your completed anime from AniList and get AI-powered recommendations for what to watch next.",
 };
 
 export default function RootLayout({
@@ -13,7 +13,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="antialiased">
+      <body className="antialiased bg-[#07091a]">
         {children}
       </body>
     </html>
