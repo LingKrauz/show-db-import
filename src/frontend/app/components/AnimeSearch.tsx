@@ -205,9 +205,9 @@ export default function AnimeSearch() {
   const isCompact = loading || submitted || !!error;
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#07091a] font-sans">
+    <div className="flex flex-col flex-1 font-sans">
       {isCompact ? (
-        <header className="sticky top-0 z-10 bg-[#0e1230]/80 backdrop-blur-md border-b border-purple-900/30 px-4 py-3 shadow-lg sm:px-6">
+        <header className="sticky top-0 z-10 bg-bg-surface/80 backdrop-blur-md border-b border-purple-300/40 dark:border-purple-900/30 px-4 py-3 shadow-lg sm:px-6">
           <div className="flex w-full items-center gap-3">
             <h1 className="shrink-0 text-lg font-bold tracking-tight sm:text-xl">
               <span className="bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
@@ -221,7 +221,7 @@ export default function AnimeSearch() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Enter your AniList username"
-                className="w-full min-w-0 rounded-full border border-purple-800/50 bg-[#0a0f2e] px-4 py-1.5 text-[#f1f5f9] placeholder-[#64748b] focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500/30 sm:flex-1 transition-colors"
+                className="w-full min-w-0 rounded-full border border-purple-400/40 dark:border-purple-800/50 bg-bg-input px-4 py-1.5 text-fg-primary placeholder-fg-muted focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500/30 sm:flex-1 transition-colors"
                 disabled={loading}
               />
               <button
@@ -252,15 +252,15 @@ export default function AnimeSearch() {
                 Find What to Watch Next,
               </span>
               <br />
-              <span className="text-[#f1f5f9]">Intelligently.</span>
+              <span className="text-fg-primary">Intelligently.</span>
             </h1>
-            <p className="text-[#94a3b8] text-lg leading-relaxed max-w-md">
+            <p className="text-fg-secondary text-lg leading-relaxed max-w-md">
               Enter your AniList username to browse your completed anime and get AI-powered recommendations tailored to your taste.
             </p>
           </div>
           <form onSubmit={handleSubmit} className="w-full max-w-md flex flex-col gap-4">
             <div className="flex flex-col gap-2">
-              <label htmlFor="username" className="text-sm font-medium text-[#94a3b8]">
+              <label htmlFor="username" className="text-sm font-medium text-fg-secondary">
                 AniList Username
               </label>
               <input
@@ -269,7 +269,7 @@ export default function AnimeSearch() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="e.g. username123"
-                className="w-full rounded-xl border border-purple-800/50 bg-[#0e1230] px-4 py-3 text-[#f1f5f9] placeholder-[#475569] focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-colors"
+                className="w-full rounded-xl border border-purple-400/40 dark:border-purple-800/50 bg-bg-surface px-4 py-3 text-fg-primary placeholder-fg-placeholder focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-colors"
                 disabled={loading}
               />
             </div>
@@ -307,15 +307,15 @@ export default function AnimeSearch() {
           {/* Skeleton loading state */}
           {loading && (
             <div className="w-full max-w-6xl">
-              <div className="mb-4 h-5 w-52 rounded-lg bg-purple-900/30 animate-pulse" />
+              <div className="mb-4 h-5 w-52 rounded-lg bg-purple-200/40 dark:bg-purple-900/30 animate-pulse" />
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {Array.from({ length: 8 }).map((_, i) => (
-                  <div key={i} className="rounded-xl border border-purple-900/30 bg-[#0e1230] overflow-hidden animate-pulse">
-                    <div className="w-full h-40 bg-purple-900/20" />
+                  <div key={i} className="rounded-xl border border-purple-300/40 dark:border-purple-900/30 bg-bg-surface overflow-hidden animate-pulse">
+                    <div className="w-full h-40 bg-purple-200/30 dark:bg-purple-900/20" />
                     <div className="p-4 flex flex-col gap-2">
-                      <div className="h-4 bg-purple-900/30 rounded w-3/4" />
-                      <div className="h-4 bg-purple-900/30 rounded w-1/2" />
-                      <div className="h-3 bg-purple-900/20 rounded w-1/4 mt-1" />
+                      <div className="h-4 bg-purple-200/40 dark:bg-purple-900/30 rounded w-3/4" />
+                      <div className="h-4 bg-purple-200/40 dark:bg-purple-900/30 rounded w-1/2" />
+                      <div className="h-3 bg-purple-200/30 dark:bg-purple-900/20 rounded w-1/4 mt-1" />
                     </div>
                   </div>
                 ))}
@@ -326,9 +326,9 @@ export default function AnimeSearch() {
           {shows.length > 0 && (
             <>
               {/* Result summary */}
-              <p className="w-full max-w-6xl text-sm text-[#94a3b8]">
+              <p className="w-full max-w-6xl text-sm text-fg-secondary">
                 Found{" "}
-                <span className="font-semibold text-[#f1f5f9]">{shows.length}</span>{" "}
+                <span className="font-semibold text-fg-primary">{shows.length}</span>{" "}
                 completed shows for{" "}
                 <span className="font-semibold text-purple-400">@{username}</span>
               </p>
@@ -336,7 +336,7 @@ export default function AnimeSearch() {
               {/* Recommendations section */}
               <div className="w-full max-w-6xl">
                 {recLoading && (
-                  <div className="flex items-center gap-3 text-[#94a3b8] py-4">
+                  <div className="flex items-center gap-3 text-fg-secondary py-4">
                     <Spinner className="h-5 w-5 text-purple-400" />
                     <span>Analyzing your watch history...</span>
                   </div>
@@ -349,16 +349,16 @@ export default function AnimeSearch() {
                 )}
 
                 {recFetched && recommendations.length === 0 && !recError && (
-                  <p className="text-[#64748b]">No recommendations returned.</p>
+                  <p className="text-fg-muted">No recommendations returned.</p>
                 )}
 
                 {recommendations.length > 0 && (
                   <div>
-                    <h2 className="text-xl font-semibold text-[#f1f5f9] mb-4">Based on your watch history</h2>
+                    <h2 className="text-xl font-semibold text-fg-primary mb-4">Based on your watch history</h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                       {recommendations.map((rec, index) => {
                         const cardClasses =
-                          "relative flex flex-col rounded-xl border border-purple-700/50 bg-[#130d2a] overflow-hidden transition-all hover:border-purple-500/70 hover:shadow-[0_0_24px_rgba(124,58,237,0.22)] focus:outline-none focus:ring-2 focus:ring-purple-500/50";
+                          "relative flex flex-col rounded-xl border border-purple-400/50 dark:border-purple-700/50 bg-bg-card overflow-hidden transition-all hover:border-purple-500/70 hover:shadow-[0_0_24px_rgba(124,58,237,0.22)] focus:outline-none focus:ring-2 focus:ring-purple-500/50";
                         const inner = (
                           <>
                             {/* Gradient top-border accent */}
@@ -377,13 +377,13 @@ export default function AnimeSearch() {
                                 placeholder="empty"
                               />
                             ) : (
-                              <div className="w-full h-40 bg-purple-950/50 flex items-center justify-center">
+                              <div className="w-full h-40 bg-purple-200/40 dark:bg-purple-950/50 flex items-center justify-center">
                                 <span className="text-purple-500/60 text-sm">No image</span>
                               </div>
                             )}
                             <div className="flex flex-col flex-1 p-4">
-                              <h3 className="font-semibold text-[#f1f5f9] line-clamp-2 mb-2">{rec.title}</h3>
-                              <p className="text-sm text-[#94a3b8] line-clamp-3">{rec.reason}</p>
+                              <h3 className="font-semibold text-fg-primary line-clamp-2 mb-2">{rec.title}</h3>
+                              <p className="text-sm text-fg-secondary line-clamp-3">{rec.reason}</p>
                             </div>
                           </>
                         );
@@ -409,7 +409,7 @@ export default function AnimeSearch() {
               {/* Shows section */}
               <div className="w-full max-w-6xl overflow-x-hidden">
                 <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <h2 className="text-xl font-semibold text-[#f1f5f9]">
+                  <h2 className="text-xl font-semibold text-fg-primary">
                     Your Shows ({shows.length})
                   </h2>
                   <div className="w-full flex flex-wrap items-center justify-end gap-3 sm:w-auto">
@@ -418,17 +418,17 @@ export default function AnimeSearch() {
                       value={filterText}
                       onChange={(e) => setFilterText(e.target.value)}
                       placeholder="Filter by title…"
-                      className="w-full min-w-0 rounded-xl border border-purple-900/40 bg-[#0e1230] px-3 py-1.5 text-sm text-[#f1f5f9] placeholder-[#475569] focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500/30 sm:w-auto sm:min-w-[12rem] transition-colors"
+                      className="w-full min-w-0 rounded-xl border border-purple-300/50 dark:border-purple-900/40 bg-bg-surface px-3 py-1.5 text-sm text-fg-primary placeholder-fg-placeholder focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500/30 sm:w-auto sm:min-w-[12rem] transition-colors"
                     />
-                    <div className="flex gap-1 rounded-xl border border-purple-900/40 bg-[#0e1230] p-1">
+                    <div className="flex gap-1 rounded-xl border border-purple-300/50 dark:border-purple-900/40 bg-bg-surface p-1">
                       <button
                         onClick={() => setViewMode("list")}
                         aria-label="List view"
                         title="List view"
                         className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
-                          viewMode === "list"
-                            ? "bg-gradient-to-r from-purple-600 to-blue-500 text-white"
-                            : "text-[#94a3b8] hover:text-[#f1f5f9] hover:bg-purple-900/20"
+                            viewMode === "list"
+                              ? "bg-gradient-to-r from-purple-600 to-blue-500 text-white"
+                              : "text-fg-secondary hover:text-fg-primary hover:bg-purple-200/30 dark:hover:bg-purple-900/20"
                         }`}
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5" aria-hidden="true">
@@ -441,9 +441,9 @@ export default function AnimeSearch() {
                         aria-label="Grid view"
                         title="Grid view"
                         className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
-                          viewMode === "grid"
-                            ? "bg-gradient-to-r from-purple-600 to-blue-500 text-white"
-                            : "text-[#94a3b8] hover:text-[#f1f5f9] hover:bg-purple-900/20"
+                            viewMode === "grid"
+                              ? "bg-gradient-to-r from-purple-600 to-blue-500 text-white"
+                              : "text-fg-secondary hover:text-fg-primary hover:bg-purple-200/30 dark:hover:bg-purple-900/20"
                         }`}
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5" aria-hidden="true">
@@ -455,7 +455,7 @@ export default function AnimeSearch() {
                     <select
                       value={sortBy}
                       onChange={(e) => setSortBy(e.target.value as SortOption)}
-                      className="w-full min-w-0 rounded-xl border border-purple-900/40 bg-[#0e1230] px-3 py-1.5 text-sm text-[#f1f5f9] focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500/30 sm:w-auto sm:min-w-[12rem]"
+                      className="w-full min-w-0 rounded-xl border border-purple-300/50 dark:border-purple-900/40 bg-bg-surface px-3 py-1.5 text-sm text-fg-primary focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500/30 sm:w-auto sm:min-w-[12rem]"
                     >
                       <option value="title-asc">Sort: Title (A-Z)</option>
                       <option value="title-desc">Sort: Title (Z-A)</option>
@@ -466,15 +466,15 @@ export default function AnimeSearch() {
                 </div>
 
                 {filterText.trim() && (
-                  <p className="mb-3 text-sm text-[#94a3b8]">
+                  <p className="mb-3 text-sm text-fg-secondary">
                     Showing{" "}
-                    <span className="font-semibold text-[#f1f5f9]">{filteredShows.length}</span>{" "}
+                    <span className="font-semibold text-fg-primary">{filteredShows.length}</span>{" "}
                     of {shows.length}
                   </p>
                 )}
 
                 {filterText.trim() && filteredShows.length === 0 && (
-                  <p className="text-sm text-[#64748b]">No shows match your filter.</p>
+                  <p className="text-sm text-fg-muted">No shows match your filter.</p>
                 )}
 
                 {viewMode === "list" ? (
@@ -488,7 +488,7 @@ export default function AnimeSearch() {
                       return (
                         <li
                           key={virtualItem.index}
-                          className="absolute w-full text-[#94a3b8] break-words flex justify-between items-start"
+                          className="absolute w-full text-fg-secondary break-words flex justify-between items-start"
                           style={{
                             height: `${virtualItem.size}px`,
                             transform: `translateY(${virtualItem.start - listVirtualizer.options.scrollMargin}px)`,
@@ -533,7 +533,7 @@ export default function AnimeSearch() {
                         >
                           {rowShows.map((show, colIdx) => {
                             const cardClasses =
-                              "flex flex-col rounded-xl border border-purple-900/30 bg-[#0e1230] overflow-hidden transition-all hover:border-purple-500/50 hover:shadow-[0_0_20px_rgba(124,58,237,0.12)] focus:outline-none focus:ring-2 focus:ring-purple-500/40";
+                              "flex flex-col rounded-xl border border-purple-300/40 dark:border-purple-900/30 bg-bg-surface overflow-hidden transition-all hover:border-purple-500/50 hover:shadow-[0_0_20px_rgba(124,58,237,0.12)] focus:outline-none focus:ring-2 focus:ring-purple-500/40";
                             const inner = (
                               <>
                                 {show.coverImageUrl ? (
@@ -547,24 +547,24 @@ export default function AnimeSearch() {
                                     placeholder="empty"
                                   />
                                 ) : (
-                                  <div className="w-full h-40 bg-[#0a0f2e] flex items-center justify-center">
-                                    <span className="text-[#475569] text-sm">No image</span>
+                                  <div className="w-full h-40 bg-bg-input flex items-center justify-center">
+                                    <span className="text-fg-placeholder text-sm">No image</span>
                                   </div>
                                 )}
                                 <div className="flex flex-col flex-1 p-4">
-                                  <h3 className="font-semibold text-[#f1f5f9] line-clamp-2 mb-3">
+                                  <h3 className="font-semibold text-fg-primary line-clamp-2 mb-3">
                                     {show.title}
                                   </h3>
                                   <div className="text-sm">
                                     {show.score !== null ? (
-                                      <span className="text-[#94a3b8]">
+                                      <span className="text-fg-secondary">
                                         Score:{" "}
                                         <span className="font-semibold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
                                           {getScoreDisplay(show.score, show.scoreFormat)}
                                         </span>
                                       </span>
                                     ) : (
-                                      <span className="text-[#475569]">—</span>
+                                      <span className="text-fg-placeholder">—</span>
                                     )}
                                   </div>
                                 </div>
