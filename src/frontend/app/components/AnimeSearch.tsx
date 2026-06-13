@@ -110,8 +110,12 @@ export default function AnimeSearch() {
       }
 
       const data: AnimeResponse = await res.json();
-      setShows(data.shows || []);
+      const fetchedShows = data.shows || [];
+      setShows(fetchedShows);
       setSubmitted(true);
+      if (fetchedShows.length > 0) {
+        handleGetRecommendations();
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch anime list");
     } finally {
@@ -331,21 +335,6 @@ export default function AnimeSearch() {
 
               {/* Recommendations section */}
               <div className="w-full max-w-6xl">
-                {!recFetched && !recLoading && (
-                  <div className="rounded-xl border border-purple-800/40 bg-[#0e1230] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                      <h2 className="text-base font-semibold text-[#f1f5f9] mb-1">AI Recommendations</h2>
-                      <p className="text-sm text-[#94a3b8]">Let AI analyze your watch history and suggest shows tailored to your taste.</p>
-                    </div>
-                    <button
-                      onClick={handleGetRecommendations}
-                      className="shrink-0 rounded-full bg-gradient-to-r from-purple-600 to-blue-500 px-5 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
-                    >
-                      Get Recommendations
-                    </button>
-                  </div>
-                )}
-
                 {recLoading && (
                   <div className="flex items-center gap-3 text-[#94a3b8] py-4">
                     <Spinner className="h-5 w-5 text-purple-400" />
