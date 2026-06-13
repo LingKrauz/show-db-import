@@ -1,18 +1,43 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:is(.dark *));
+
 :root {
-  --background: #07091a;
-  --foreground: #f1f5f9;
+  --bg-primary: #f5f4ff;
+  --bg-surface: #ffffff;
+  --bg-input: #eeeeff;
+  --bg-card: #f2eeff;
+  --fg-primary: #1e293b;
+  --fg-secondary: #475569;
+  --fg-muted: #94a3b8;
+  --fg-placeholder: #94a3b8;
+}
+
+.dark {
+  --bg-primary: #07091a;
+  --bg-surface: #0e1230;
+  --bg-input: #0a0f2e;
+  --bg-card: #130d2a;
+  --fg-primary: #f1f5f9;
+  --fg-secondary: #94a3b8;
+  --fg-muted: #64748b;
+  --fg-placeholder: #475569;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-bg-primary: var(--bg-primary);
+  --color-bg-surface: var(--bg-surface);
+  --color-bg-input: var(--bg-input);
+  --color-bg-card: var(--bg-card);
+  --color-fg-primary: var(--fg-primary);
+  --color-fg-secondary: var(--fg-secondary);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-placeholder: var(--fg-placeholder);
   --font-sans: "Segoe UI", Arial, Helvetica, sans-serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--bg-primary);
+  color: var(--fg-primary);
   font-family: var(--font-sans);
 }

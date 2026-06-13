@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import ThemeProvider from "@/app/components/ThemeProvider";
+import Footer from "@/app/components/Footer";
 
 export const metadata: Metadata = {
   title: "AniList Show Finder",
@@ -13,8 +15,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="antialiased bg-[#07091a]">
-        {children}
+      <body className="antialiased bg-bg-primary text-fg-primary">
+        <ThemeProvider>
+          <div className="flex min-h-screen flex-col">
+            {children}
+            <Footer />
+          </div>
+        </ThemeProvider>
       </body>
     </html>
   );
