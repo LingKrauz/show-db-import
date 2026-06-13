@@ -33,6 +33,21 @@ interface RecommendationResponse {
 type SortOption = "title-asc" | "title-desc" | "score-asc" | "score-desc";
 type ViewMode = "list" | "grid";
 
+function Spinner({ className }: { className?: string }) {
+  return (
+    <svg
+      className={`animate-spin ${className ?? "h-4 w-4"}`}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+    </svg>
+  );
+}
+
 export default function AnimeSearch() {
   const [username, setUsername] = useState("");
   const [shows, setShows] = useState<AnimeShow[]>([]);
@@ -41,19 +56,38 @@ export default function AnimeSearch() {
   const [submitted, setSubmitted] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>("title-asc");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [filterText, setFilterText] = useState("");
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [recLoading, setRecLoading] = useState(false);
   const [recError, setRecError] = useState<string | null>(null);
   const [recFetched, setRecFetched] = useState(false);
-
-  const listRef = useRef<HTMLOListElement>(null);
-  const [scrollMargin, setScrollMargin] = useState(0);
+  const [columns, setColumns] = useState(4);
 
   useEffect(() => {
-    if (listRef.current) {
-      setScrollMargin(listRef.current.offsetTop);
-    }
-  }, [shows]);
+    const updateColumns = () => {
+      const w = window.innerWidth;
+      if (w >= 1280) setColumns(4);
+      else if (w >= 1024) setColumns(3);
+      else if (w >= 640) setColumns(2);
+      else setColumns(1);
+    };
+    updateColumns();
+    window.addEventListener("resize", updateColumns);
+    return () => window.removeEventListener("resize", updateColumns);
+  }, []);
+
+  const listRef = useRef<HTMLOListElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const [listScrollMargin, setListScrollMargin] = useState(0);
+  const [gridScrollMargin, setGridScrollMargin] = useState(0);
+
+  useEffect(() => {
+    if (listRef.current) setListScrollMargin(listRef.current.offsetTop);
+  }, [shows, filterText]);
+
+  useEffect(() => {
+    if (gridRef.current) setGridScrollMargin(gridRef.current.offsetTop);
+  }, [shows, columns, filterText]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -65,6 +99,7 @@ export default function AnimeSearch() {
     setLoading(true);
     setSubmitted(false);
     setSortBy("title-asc");
+    setFilterText("");
 
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5132";
@@ -81,12 +116,6 @@ export default function AnimeSearch() {
       setError(err instanceof Error ? err.message : "Failed to fetch anime list");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleOpenAniList = (aniListId: number | null) => {
-    if (aniListId) {
-      window.open(`https://anilist.co/anime/${aniListId}`, "_blank");
     }
   };
 
@@ -111,7 +140,7 @@ export default function AnimeSearch() {
 
   const sortedShows = useMemo(() => {
     const sorted = [...shows];
-    
+
     switch (sortBy) {
       case "title-asc":
         sorted.sort((a, b) => a.title.localeCompare(b.title));
@@ -136,15 +165,37 @@ export default function AnimeSearch() {
         });
         break;
     }
-    
+
     return sorted;
   }, [shows, sortBy]);
 
+  const filteredShows = useMemo(() => {
+    if (!filterText.trim()) return sortedShows;
+    const lower = filterText.toLowerCase();
+    return sortedShows.filter((show) => show.title.toLowerCase().includes(lower));
+  }, [sortedShows, filterText]);
+
+  const gridRows = useMemo(() => {
+    const rows: AnimeShow[][] = [];
+    for (let i = 0; i < filteredShows.length; i += columns) {
+      rows.push(filteredShows.slice(i, i + columns));
+    }
+    return rows;
+  }, [filteredShows, columns]);
+
   const listVirtualizer = useWindowVirtualizer({
-    count: sortedShows.length,
+    count: filteredShows.length,
     estimateSize: () => 40,
     overscan: 10,
-    scrollMargin,
+    scrollMargin: listScrollMargin,
+  });
+
+  // Each row is ~280px card + 16px bottom gap
+  const gridVirtualizer = useWindowVirtualizer({
+    count: gridRows.length,
+    estimateSize: () => 296,
+    overscan: 2,
+    scrollMargin: gridScrollMargin,
   });
 
   const isCompact = loading || submitted || !!error;
@@ -172,9 +223,14 @@ export default function AnimeSearch() {
               <button
                 type="submit"
                 disabled={loading || !username.trim()}
-                className="w-full rounded-full bg-gradient-to-r from-purple-600 to-blue-500 px-4 py-1.5 font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed sm:w-auto whitespace-nowrap"
+                className="w-full rounded-full bg-gradient-to-r from-purple-600 to-blue-500 px-4 py-1.5 font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed sm:w-auto whitespace-nowrap inline-flex items-center justify-center gap-1.5"
               >
-                {loading ? "Loading..." : (
+                {loading ? (
+                  <>
+                    <Spinner className="h-3.5 w-3.5" />
+                    Loading...
+                  </>
+                ) : (
                   <>
                     <span className="sm:hidden">Find</span>
                     <span className="hidden sm:inline">Find Shows</span>
@@ -216,9 +272,14 @@ export default function AnimeSearch() {
             <button
               type="submit"
               disabled={loading || !username.trim()}
-              className="w-full rounded-xl bg-gradient-to-r from-purple-600 to-blue-500 px-6 py-3 font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="w-full rounded-xl bg-gradient-to-r from-purple-600 to-blue-500 px-6 py-3 font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
             >
-              {loading ? "Loading..." : "Find Completed Shows"}
+              {loading ? (
+                <>
+                  <Spinner />
+                  Loading...
+                </>
+              ) : "Find Completed Shows"}
             </button>
           </form>
         </header>
@@ -239,194 +300,308 @@ export default function AnimeSearch() {
             </div>
           )}
 
-          {shows.length > 0 && (
+          {/* Skeleton loading state */}
+          {loading && (
             <div className="w-full max-w-6xl">
-              <div className="mb-6 flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-[#f1f5f9]">
-                  Based on what you like, you may enjoy:
-                </h2>
-                {!recFetched && (
-                  <button
-                    onClick={handleGetRecommendations}
-                    disabled={recLoading}
-                    className="rounded-full bg-gradient-to-r from-purple-600 to-blue-500 px-5 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    {recLoading ? "Thinking..." : "Get AI Recommendations"}
-                  </button>
-                )}
-              </div>
-
-              {recError && (
-                <div className="rounded-xl border border-red-900/40 bg-red-950/30 p-4 mb-4">
-                  <p className="text-red-300">Error: {recError}</p>
-                </div>
-              )}
-
-              {recLoading && (
-                <div className="flex items-center gap-3 text-[#94a3b8]">
-                  <svg className="animate-spin h-5 w-5 text-purple-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                  <span>Analyzing your watch history...</span>
-                </div>
-              )}
-
-              {recFetched && recommendations.length === 0 && !recError && (
-                <p className="text-[#64748b]">No recommendations returned.</p>
-              )}
-
-              {recommendations.length > 0 && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {recommendations.map((rec, index) => (
-                    <div
-                      key={index}
-                      onClick={() => handleOpenAniList(rec.aniListId)}
-                      className={`relative rounded-xl border border-purple-800/40 bg-[#130d2a] overflow-hidden transition-all hover:border-purple-500/60 hover:shadow-[0_0_20px_rgba(124,58,237,0.15)] ${rec.aniListId ? "cursor-pointer" : ""}`}
-                    >
-                      <span className="absolute top-2 right-2 z-10 rounded-full bg-gradient-to-r from-purple-600 to-blue-500 px-2 py-0.5 text-xs font-semibold text-white">
-                        AI
-                      </span>
-                      {rec.coverImageUrl ? (
-                        <Image
-                          src={rec.coverImageUrl}
-                          alt={rec.title}
-                          width={225}
-                          height={320}
-                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
-                          className="w-full h-40 object-cover"
-                          placeholder="empty"
-                        />
-                      ) : (
-                        <div className="w-full h-40 bg-purple-950/50 flex items-center justify-center">
-                          <span className="text-purple-500/60 text-sm">No image</span>
-                        </div>
-                      )}
-                      <div className="p-4">
-                        <h3 className="font-semibold text-[#f1f5f9] line-clamp-2 mb-2">
-                          {rec.title}
-                        </h3>
-                        <p className="text-sm text-[#94a3b8]">{rec.reason}</p>
-                      </div>
+              <div className="mb-4 h-5 w-52 rounded-lg bg-purple-900/30 animate-pulse" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <div key={i} className="rounded-xl border border-purple-900/30 bg-[#0e1230] overflow-hidden animate-pulse">
+                    <div className="w-full h-40 bg-purple-900/20" />
+                    <div className="p-4 flex flex-col gap-2">
+                      <div className="h-4 bg-purple-900/30 rounded w-3/4" />
+                      <div className="h-4 bg-purple-900/30 rounded w-1/2" />
+                      <div className="h-3 bg-purple-900/20 rounded w-1/4 mt-1" />
                     </div>
-                  ))}
-                </div>
-              )}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
           {shows.length > 0 && (
-            <div className="w-full max-w-6xl overflow-x-hidden">
-              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <h2 className="text-xl font-semibold text-[#f1f5f9]">
-                  Your Shows ({shows.length})
-                </h2>
-                <div className="w-full flex flex-wrap items-center justify-end gap-3 sm:w-auto">
-                  <div className="flex flex-wrap gap-1 rounded-xl border border-purple-900/40 bg-[#0e1230] p-1">
+            <>
+              {/* Result summary */}
+              <p className="w-full max-w-6xl text-sm text-[#94a3b8]">
+                Found{" "}
+                <span className="font-semibold text-[#f1f5f9]">{shows.length}</span>{" "}
+                completed shows for{" "}
+                <span className="font-semibold text-purple-400">@{username}</span>
+              </p>
+
+              {/* Recommendations section */}
+              <div className="w-full max-w-6xl">
+                {!recFetched && !recLoading && (
+                  <div className="rounded-xl border border-purple-800/40 bg-[#0e1230] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <h2 className="text-base font-semibold text-[#f1f5f9] mb-1">AI Recommendations</h2>
+                      <p className="text-sm text-[#94a3b8]">Let AI analyze your watch history and suggest shows tailored to your taste.</p>
+                    </div>
                     <button
-                      onClick={() => setViewMode("list")}
-                      className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
-                        viewMode === "list"
-                          ? "bg-gradient-to-r from-purple-600 to-blue-500 text-white"
-                          : "text-[#94a3b8] hover:text-[#f1f5f9] hover:bg-purple-900/20"
-                      }`}
+                      onClick={handleGetRecommendations}
+                      className="shrink-0 rounded-full bg-gradient-to-r from-purple-600 to-blue-500 px-5 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
                     >
-                      List
-                    </button>
-                    <button
-                      onClick={() => setViewMode("grid")}
-                      className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
-                        viewMode === "grid"
-                          ? "bg-gradient-to-r from-purple-600 to-blue-500 text-white"
-                          : "text-[#94a3b8] hover:text-[#f1f5f9] hover:bg-purple-900/20"
-                      }`}
-                    >
-                      Grid
+                      Get Recommendations
                     </button>
                   </div>
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as SortOption)}
-                    className="w-full min-w-0 rounded-xl border border-purple-900/40 bg-[#0e1230] px-3 py-1.5 text-sm text-[#f1f5f9] focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500/30 sm:w-auto sm:min-w-[12rem]"
-                  >
-                    <option value="title-asc">Sort: Title (A-Z)</option>
-                    <option value="title-desc">Sort: Title (Z-A)</option>
-                    <option value="score-asc">Sort: Score (Low to High)</option>
-                    <option value="score-desc">Sort: Score (High to Low)</option>
-                  </select>
-                </div>
+                )}
+
+                {recLoading && (
+                  <div className="flex items-center gap-3 text-[#94a3b8] py-4">
+                    <Spinner className="h-5 w-5 text-purple-400" />
+                    <span>Analyzing your watch history...</span>
+                  </div>
+                )}
+
+                {recError && (
+                  <div className="rounded-xl border border-red-900/40 bg-red-950/30 p-4">
+                    <p className="text-red-300">Error: {recError}</p>
+                  </div>
+                )}
+
+                {recFetched && recommendations.length === 0 && !recError && (
+                  <p className="text-[#64748b]">No recommendations returned.</p>
+                )}
+
+                {recommendations.length > 0 && (
+                  <div>
+                    <h2 className="text-xl font-semibold text-[#f1f5f9] mb-4">Based on your watch history</h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                      {recommendations.map((rec, index) => {
+                        const cardClasses =
+                          "relative flex flex-col rounded-xl border border-purple-700/50 bg-[#130d2a] overflow-hidden transition-all hover:border-purple-500/70 hover:shadow-[0_0_24px_rgba(124,58,237,0.22)] focus:outline-none focus:ring-2 focus:ring-purple-500/50";
+                        const inner = (
+                          <>
+                            {/* Gradient top-border accent */}
+                            <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-purple-500 to-blue-500 z-10" />
+                            <span className="absolute top-2 right-2 z-10 rounded-full bg-gradient-to-r from-purple-600 to-blue-500 px-2 py-0.5 text-xs font-semibold text-white">
+                              AI
+                            </span>
+                            {rec.coverImageUrl ? (
+                              <Image
+                                src={rec.coverImageUrl}
+                                alt={rec.title}
+                                width={225}
+                                height={320}
+                                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
+                                className="w-full h-40 object-cover"
+                                placeholder="empty"
+                              />
+                            ) : (
+                              <div className="w-full h-40 bg-purple-950/50 flex items-center justify-center">
+                                <span className="text-purple-500/60 text-sm">No image</span>
+                              </div>
+                            )}
+                            <div className="flex flex-col flex-1 p-4">
+                              <h3 className="font-semibold text-[#f1f5f9] line-clamp-2 mb-2">{rec.title}</h3>
+                              <p className="text-sm text-[#94a3b8] line-clamp-3">{rec.reason}</p>
+                            </div>
+                          </>
+                        );
+                        return rec.aniListId ? (
+                          <a
+                            key={index}
+                            href={`https://anilist.co/anime/${rec.aniListId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={cardClasses}
+                          >
+                            {inner}
+                          </a>
+                        ) : (
+                          <div key={index} className={cardClasses}>{inner}</div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {viewMode === "list" ? (
-                <ol
-                  ref={listRef}
-                  className="relative list-decimal list-inside"
-                  style={{ height: `${listVirtualizer.getTotalSize()}px` }}
-                >
-                  {listVirtualizer.getVirtualItems().map((virtualItem) => {
-                    const show = sortedShows[virtualItem.index];
-                    return (
-                      <li
-                        key={virtualItem.index}
-                        className="absolute w-full text-[#94a3b8] break-words flex justify-between items-start"
-                        style={{
-                          height: `${virtualItem.size}px`,
-                          transform: `translateY(${virtualItem.start - listVirtualizer.options.scrollMargin}px)`,
-                        }}
+              {/* Shows section */}
+              <div className="w-full max-w-6xl overflow-x-hidden">
+                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <h2 className="text-xl font-semibold text-[#f1f5f9]">
+                    Your Shows ({shows.length})
+                  </h2>
+                  <div className="w-full flex flex-wrap items-center justify-end gap-3 sm:w-auto">
+                    <input
+                      type="text"
+                      value={filterText}
+                      onChange={(e) => setFilterText(e.target.value)}
+                      placeholder="Filter by title…"
+                      className="w-full min-w-0 rounded-xl border border-purple-900/40 bg-[#0e1230] px-3 py-1.5 text-sm text-[#f1f5f9] placeholder-[#475569] focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500/30 sm:w-auto sm:min-w-[12rem] transition-colors"
+                    />
+                    <div className="flex gap-1 rounded-xl border border-purple-900/40 bg-[#0e1230] p-1">
+                      <button
+                        onClick={() => setViewMode("list")}
+                        aria-label="List view"
+                        title="List view"
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                          viewMode === "list"
+                            ? "bg-gradient-to-r from-purple-600 to-blue-500 text-white"
+                            : "text-[#94a3b8] hover:text-[#f1f5f9] hover:bg-purple-900/20"
+                        }`}
                       >
-                        <span className="flex-1">{show.title}</span>
-                        {show.score && (
-                          <span className="ml-4 font-semibold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent whitespace-nowrap">
-                            {getScoreDisplay(show.score, show.scoreFormat)}
-                          </span>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ol>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {sortedShows.map((show, index) => (
-                    <div
-                      key={index}
-                      onClick={() => handleOpenAniList(show.aniListId)}
-                      className={`rounded-xl border border-purple-900/30 bg-[#0e1230] overflow-hidden transition-all hover:border-purple-500/50 hover:shadow-[0_0_20px_rgba(124,58,237,0.12)] ${show.aniListId ? "cursor-pointer" : ""}`}
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5" aria-hidden="true">
+                          <path fillRule="evenodd" d="M2 4a1 1 0 0 1 1-1h10a1 1 0 1 1 0 2H3a1 1 0 0 1-1-1Zm0 4a1 1 0 0 1 1-1h10a1 1 0 1 1 0 2H3a1 1 0 0 1-1-1Zm0 4a1 1 0 0 1 1-1h10a1 1 0 1 1 0 2H3a1 1 0 0 1-1-1Z" clipRule="evenodd" />
+                        </svg>
+                        List
+                      </button>
+                      <button
+                        onClick={() => setViewMode("grid")}
+                        aria-label="Grid view"
+                        title="Grid view"
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                          viewMode === "grid"
+                            ? "bg-gradient-to-r from-purple-600 to-blue-500 text-white"
+                            : "text-[#94a3b8] hover:text-[#f1f5f9] hover:bg-purple-900/20"
+                        }`}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5" aria-hidden="true">
+                          <path d="M3 3h4v4H3V3Zm6 0h4v4H9V3ZM3 9h4v4H3V9Zm6 0h4v4H9V9Z" />
+                        </svg>
+                        Grid
+                      </button>
+                    </div>
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value as SortOption)}
+                      className="w-full min-w-0 rounded-xl border border-purple-900/40 bg-[#0e1230] px-3 py-1.5 text-sm text-[#f1f5f9] focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500/30 sm:w-auto sm:min-w-[12rem]"
                     >
-                      {show.coverImageUrl ? (
-                        <Image
-                          src={show.coverImageUrl}
-                          alt={show.title}
-                          width={225}
-                          height={320}
-                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
-                          className="w-full h-40 object-cover"
-                          placeholder="empty"
-                        />
-                      ) : (
-                        <div className="w-full h-40 bg-[#0a0f2e] flex items-center justify-center">
-                          <span className="text-[#475569] text-sm">No image</span>
-                        </div>
-                      )}
-                      <div className="p-4">
-                        <h3 className="font-semibold text-[#f1f5f9] line-clamp-2 mb-3">
-                          {show.title}
-                        </h3>
-                        {show.score ? (
-                          <div className="text-sm text-[#94a3b8]">
-                            Score:{" "}
-                            <span className="font-semibold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+                      <option value="title-asc">Sort: Title (A-Z)</option>
+                      <option value="title-desc">Sort: Title (Z-A)</option>
+                      <option value="score-asc">Sort: Score (Low to High)</option>
+                      <option value="score-desc">Sort: Score (High to Low)</option>
+                    </select>
+                  </div>
+                </div>
+
+                {filterText.trim() && (
+                  <p className="mb-3 text-sm text-[#94a3b8]">
+                    Showing{" "}
+                    <span className="font-semibold text-[#f1f5f9]">{filteredShows.length}</span>{" "}
+                    of {shows.length}
+                  </p>
+                )}
+
+                {filterText.trim() && filteredShows.length === 0 && (
+                  <p className="text-sm text-[#64748b]">No shows match your filter.</p>
+                )}
+
+                {viewMode === "list" ? (
+                  <ol
+                    ref={listRef}
+                    className="relative list-decimal list-inside"
+                    style={{ height: `${listVirtualizer.getTotalSize()}px` }}
+                  >
+                    {listVirtualizer.getVirtualItems().map((virtualItem) => {
+                      const show = filteredShows[virtualItem.index];
+                      return (
+                        <li
+                          key={virtualItem.index}
+                          className="absolute w-full text-[#94a3b8] break-words flex justify-between items-start"
+                          style={{
+                            height: `${virtualItem.size}px`,
+                            transform: `translateY(${virtualItem.start - listVirtualizer.options.scrollMargin}px)`,
+                          }}
+                        >
+                          {show.aniListId ? (
+                            <a
+                              href={`https://anilist.co/anime/${show.aniListId}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex-1 hover:text-purple-300 transition-colors"
+                            >
+                              {show.title}
+                            </a>
+                          ) : (
+                            <span className="flex-1">{show.title}</span>
+                          )}
+                          {show.score !== null && (
+                            <span className="ml-4 font-semibold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent whitespace-nowrap">
                               {getScoreDisplay(show.score, show.scoreFormat)}
                             </span>
-                          </div>
-                        ) : (
-                          <div className="text-sm text-[#475569]">No score</div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ol>
+                ) : (
+                  <div
+                    ref={gridRef}
+                    className="relative"
+                    style={{ height: `${gridVirtualizer.getTotalSize()}px` }}
+                  >
+                    {gridVirtualizer.getVirtualItems().map((virtualRow) => {
+                      const rowShows = gridRows[virtualRow.index];
+                      return (
+                        <div
+                          key={virtualRow.index}
+                          className="absolute w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-4 pb-4"
+                          style={{
+                            transform: `translateY(${virtualRow.start - gridVirtualizer.options.scrollMargin}px)`,
+                          }}
+                        >
+                          {rowShows.map((show, colIdx) => {
+                            const cardClasses =
+                              "flex flex-col rounded-xl border border-purple-900/30 bg-[#0e1230] overflow-hidden transition-all hover:border-purple-500/50 hover:shadow-[0_0_20px_rgba(124,58,237,0.12)] focus:outline-none focus:ring-2 focus:ring-purple-500/40";
+                            const inner = (
+                              <>
+                                {show.coverImageUrl ? (
+                                  <Image
+                                    src={show.coverImageUrl}
+                                    alt={show.title}
+                                    width={225}
+                                    height={320}
+                                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
+                                    className="w-full h-40 object-cover"
+                                    placeholder="empty"
+                                  />
+                                ) : (
+                                  <div className="w-full h-40 bg-[#0a0f2e] flex items-center justify-center">
+                                    <span className="text-[#475569] text-sm">No image</span>
+                                  </div>
+                                )}
+                                <div className="flex flex-col flex-1 p-4">
+                                  <h3 className="font-semibold text-[#f1f5f9] line-clamp-2 mb-3">
+                                    {show.title}
+                                  </h3>
+                                  <div className="text-sm">
+                                    {show.score !== null ? (
+                                      <span className="text-[#94a3b8]">
+                                        Score:{" "}
+                                        <span className="font-semibold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+                                          {getScoreDisplay(show.score, show.scoreFormat)}
+                                        </span>
+                                      </span>
+                                    ) : (
+                                      <span className="text-[#475569]">—</span>
+                                    )}
+                                  </div>
+                                </div>
+                              </>
+                            );
+                            return show.aniListId ? (
+                              <a
+                                key={colIdx}
+                                href={`https://anilist.co/anime/${show.aniListId}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={cardClasses}
+                              >
+                                {inner}
+                              </a>
+                            ) : (
+                              <div key={colIdx} className={cardClasses}>{inner}</div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </>
           )}
 
         </main>
