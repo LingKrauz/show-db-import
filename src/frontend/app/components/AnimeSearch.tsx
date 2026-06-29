@@ -54,7 +54,7 @@ export default function AnimeSearch() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [sortBy, setSortBy] = useState<SortOption>("title-asc");
+  const [sortBy, setSortBy] = useState<SortOption>("score-desc");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [filterText, setFilterText] = useState("");
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
@@ -108,7 +108,7 @@ export default function AnimeSearch() {
     setRecFetched(false);
     setLoading(true);
     setSubmitted(false);
-    setSortBy("title-asc");
+    setSortBy("score-desc");
     setFilterText("");
 
     try {
