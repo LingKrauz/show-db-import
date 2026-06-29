@@ -62,6 +62,7 @@ export default function AnimeSearch() {
   const [recError, setRecError] = useState<string | null>(null);
   const [recFetched, setRecFetched] = useState(false);
   const [columns, setColumns] = useState(4);
+  const [showSlowLoad, setShowSlowLoad] = useState(false);
 
   useEffect(() => {
     const updateColumns = () => {
@@ -88,6 +89,15 @@ export default function AnimeSearch() {
   useEffect(() => {
     if (gridRef.current) setGridScrollMargin(gridRef.current.offsetTop);
   }, [shows, columns, filterText]);
+
+  useEffect(() => {
+    if (!loading) {
+      setShowSlowLoad(false);
+      return;
+    }
+    const timer = setTimeout(() => setShowSlowLoad(true), 30000);
+    return () => clearTimeout(timer);
+  }, [loading]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -320,6 +330,11 @@ export default function AnimeSearch() {
                   </div>
                 ))}
               </div>
+              {showSlowLoad && (
+                <p className="mt-6 text-center text-sm text-fg-secondary">
+                  Please wait, services are starting up. If not loaded in 30 seconds, refresh the page and try again.
+                </p>
+              )}
             </div>
           )}
 
